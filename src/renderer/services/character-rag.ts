@@ -393,8 +393,24 @@ export function getTopGuesses(
     const traitBonus = Math.min(traits.length * 0.05, 0.3) // More traits = more confidence
     const factsBonus = Math.min(char.distinctive_facts.length * 0.01, 0.1) // More facts = slight boost
     
+    // Add recency/prominence bonus for more recent/well-known figures
+    let prominenceBonus = 0
+    const facts = char.distinctive_facts.join(' ')
+    // Check for recent years in facts (indicates contemporary figure)
+    if (facts.includes('201') || facts.includes('202')) {
+      prominenceBonus += 0.03
+    }
+    // Check for prominence indicators
+    if (facts.includes('President') || facts.includes('award') || facts.includes('famous') || 
+        facts.includes('known for') || facts.includes('star')) {
+      prominenceBonus += 0.02
+    }
+    
+    // Add small random variance to break perfect ties
+    const randomTiebreaker = (Math.random() * 0.05)
+    
     const confidence = Math.min(
-      0.5 + (matchPercentage * 0.3) + traitBonus + factsBonus,
+      0.5 + (matchPercentage * 0.3) + traitBonus + factsBonus + prominenceBonus + randomTiebreaker,
       0.95
     )
     
