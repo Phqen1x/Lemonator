@@ -115,11 +115,11 @@ Return ONLY valid JSON:
 const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 
 **AVAILABLE TRAIT KEYS:**
-- fictional (true/false)
+- fictional (true/false) - Is the character entirely made up vs a real person?
 - gender (male/female)
 - category (actors, athletes, musicians, politicians, historical, anime, superheroes, tv-characters, video-games, other)
 - origin_medium (anime, movie, tv, video-game, comic-book)
-- has_powers (true/false)
+- has_powers (true/false) - Supernatural/superhuman abilities
 - alignment (hero, villain)
 - species (human, alien, robot, god, animal, etc.)
 - age_group (child, teenager, adult)
@@ -128,11 +128,35 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 **OUTPUT:** Return ONLY valid JSON:
 {"key": "trait_key", "value": "trait_value", "confidence": 0.95}
 
-**RULES:**
-- Use confidence 0.9-0.95 for "yes/probably"
-- Use confidence 0.8-0.9 for "no/probably_not"  
-- Map answers correctly: "Is fictional?" + "no" → fictional=false
-- Return null for "dont_know" answers`
+**CRITICAL EXTRACTION RULES:**
+1. For "YES" answers: Extract POSITIVE traits
+   Example: "Is actor?" + "yes" → {"key": "category", "value": "actors", "confidence": 0.95}
+
+2. For "NO" answers: Use "NOT_" prefix to indicate EXCLUSION
+   Example: "Is actor?" + "no" → {"key": "category", "value": "NOT_actors", "confidence": 0.9}
+
+3. For "PROBABLY" answers: Extract with lower confidence (0.7-0.8)
+   Example: "Is male?" + "probably" → {"key": "gender", "value": "male", "confidence": 0.75}
+
+4. Match question topic PRECISELY - extract ONLY what the question asks about
+   - Question about actors? → Extract category trait
+   - Question about fictional? → Extract fictional trait  
+   - Question about powers? → Extract has_powers trait
+   - DON'T infer unrelated traits!
+
+5. Important distinctions:
+   - "fictional" means made-up character (Spider-Man, Harry Potter)
+   - "actors" are REAL people who act in movies (Tom Hanks, Meryl Streep)
+   - Movie characters are fictional, actors are NOT fictional
+   
+6. Return null if question doesn't clearly map to any available trait
+
+**EXAMPLES:**
+Q: "Is your character an actor?" A: "No" → {"key": "category", "value": "NOT_actors", "confidence": 0.9}
+Q: "Is your character fictional?" A: "Yes" → {"key": "fictional", "value": "true", "confidence": 0.95}
+Q: "Is your character male?" A: "Probably" → {"key": "gender", "value": "male", "confidence": 0.75}
+Q: "Does your character have superpowers?" A: "Yes" → {"key": "has_powers", "value": "true", "confidence": 0.95}
+Q: "Is your character known for football?" A: "No" → {"key": "sport", "value": "NOT_football", "confidence": 0.8} OR null (sport not in available keys)`
 
 /**
  * Extract trait from question + answer
@@ -150,6 +174,7 @@ async function extractTrait(
   const prompt = `Question: "${question}"
 Answer: "${ANSWER_LABELS[answer]}"
 
+CRITICAL: Match the question topic precisely. Don't infer unrelated traits.
 Extract the trait.`
 
   try {
@@ -168,22 +193,26 @@ Extract the trait.`
     
     const json = extractJSON(raw)
     if (!json || !json.key || !json.value) {
-      console.warn('[Detective-RAG] Failed to extract trait from:', raw)
+      console.warn('[Detective-RAG] FAILED extraction - invalid JSON:', raw)
       return null
     }
 
     // Validate value
     const value = String(json.value).toLowerCase()
     if (['unknown', 'unclear', 'n/a', 'none'].includes(value)) {
+      console.warn('[Detective-RAG] FAILED extraction - unclear value:', value)
       return null
     }
 
-    return {
+    const trait = {
       key: String(json.key),
       value: String(json.value),
       confidence: Math.min(Math.max(Number(json.confidence) || 0.9, 0.1), 0.99),
       turnAdded
     }
+    
+    console.info(`[Detective-RAG] SUCCESS: ${trait.key} = ${trait.value} (conf: ${Math.round(trait.confidence * 100)}%)`)
+    return trait
   } catch (error) {
     console.error('[Detective-RAG] extractTrait error:', error)
     return null
@@ -207,6 +236,22 @@ async function askNextQuestion(
   // Use RAG to filter candidates based on confirmed traits
   const remainingCandidates = filterCharactersByTraits(traits)
   console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match confirmed traits`)
+
+  // CRITICAL: Detect contradictory traits (0 candidates)
+  if (remainingCandidates.length === 0 && traits.length > 0) {
+    console.error('[Detective-RAG] ERROR: No candidates match all confirmed traits!')
+    console.error('[Detective-RAG] This usually means contradictory answers or database mismatch')
+    console.error('[Detective-RAG] Confirmed traits:', JSON.stringify(traits, null, 2))
+    
+    // Try to identify the contradiction
+    const traitSummary = traits.map(t => `${t.key}=${t.value}`).join(', ')
+    console.error(`[Detective-RAG] Looking for character with: ${traitSummary}`)
+    
+    return {
+      question: `I couldn't find any characters matching your answers (${traitSummary}). Did you answer all questions correctly? Should we start over?`,
+      topGuesses: []
+    }
+  }
 
   // Get top guesses from RAG
   const ragGuesses = getRagTopGuesses(traits, 3)
