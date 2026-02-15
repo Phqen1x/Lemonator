@@ -56,20 +56,23 @@ export function simulateAnswer(
     return character.traits.fictional ? 'yes' : 'no'
   }
   
-  // Gender
+  // Gender (check name and facts)
+  const femaleNames = ['taylor', 'scarlett', 'nicole', 'jennifer', 'emma', 'natalie', 'angelina', 'madonna', 'rihanna', 'beyonce', 'adele', 'gaga', 'ariana']
+  const isFemaleByName = femaleNames.some(name => character.name.toLowerCase().includes(name))
+  
   if (q.includes('male') && !q.includes('female')) {
     if (facts.includes('he ') || facts.includes('his ') || 
         (facts.includes('actor') && !facts.includes('actress'))) {
       return 'yes'
     }
-    if (facts.includes('she ') || facts.includes('her ') || facts.includes('actress')) {
+    if (facts.includes('she ') || facts.includes('her ') || facts.includes('actress') || isFemaleByName) {
       return 'no'
     }
     return 'probably' // Ambiguous
   }
   
   if (q.includes('female')) {
-    if (facts.includes('she ') || facts.includes('her ') || facts.includes('actress')) {
+    if (facts.includes('she ') || facts.includes('her ') || facts.includes('actress') || isFemaleByName) {
       return 'yes'
     }
     if (facts.includes('he ') || facts.includes('his ') || 

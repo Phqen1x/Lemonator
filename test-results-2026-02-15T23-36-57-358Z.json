@@ -1,0 +1,728 @@
+{
+  "timestamp": "2026-02-15T23:36:57.359Z",
+  "options": {
+    "numGames": 5,
+    "maxTurns": 25
+  },
+  "metrics": {
+    "totalGames": 5,
+    "successRate": 0.2,
+    "averageTurns": 22,
+    "guessDistribution": {
+      "firstGuess": 1,
+      "secondGuess": 0,
+      "thirdGuess": 0,
+      "notInTop3": 4
+    },
+    "categoryPerformance": {
+      "historical": {
+        "games": 1,
+        "success": 1,
+        "avgTurns": 10
+      },
+      "musicians": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "superheroes": {
+        "games": 3,
+        "success": 0,
+        "avgTurns": 25
+      }
+    },
+    "hardestCharacters": [
+      {
+        "name": "Taylor Swift",
+        "turns": 25
+      },
+      {
+        "name": "Hawkeye",
+        "turns": 25
+      },
+      {
+        "name": "Thanos",
+        "turns": 25
+      },
+      {
+        "name": "Iron Man",
+        "turns": 25
+      },
+      {
+        "name": "Benjamin Franklin",
+        "turns": 10
+      }
+    ]
+  },
+  "results": [
+    {
+      "characterName": "Benjamin Franklin",
+      "category": "historical",
+      "success": true,
+      "turnsToGuess": 10,
+      "totalTurns": 9,
+      "finalGuesses": [],
+      "correctGuessRank": 1,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "female",
+          "confidence": 0.9,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 9
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for being a public figure in the arts or entertainment?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for being a public figure in the arts or entertainment?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for being a public figure in the arts or entertainment?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for being involved in music or performing arts?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for being a philosopher?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Taylor Swift",
+      "category": "musicians",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "musicians",
+          "confidence": 0.95,
+          "turnAdded": 11
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "yes"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Hawkeye",
+      "category": "superheroes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.95,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 11
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 13
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no"
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no"
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Thanos",
+      "category": "superheroes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "has_powers",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 8
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for having superpowers?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character known for having superhuman speed?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character known for having a strong, fast, or explosive power style?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably"
+        }
+      ]
+    },
+    {
+      "characterName": "Iron Man",
+      "category": "superheroes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "has_powers",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 8
+        },
+        {
+          "key": "has_powers",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 9
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for having superhuman speed or abilities?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character known for having superhuman speed?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character one of these?",
+          "answer": "no"
+        }
+      ]
+    }
+  ]
+}
