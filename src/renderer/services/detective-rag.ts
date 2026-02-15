@@ -140,10 +140,18 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
    Example: "Is male?" + "probably" → {"key": "gender", "value": "male", "confidence": 0.75}
 
 4. Match question topic PRECISELY - extract ONLY what the question asks about
-   - Question about actors? → Extract category trait
-   - Question about fictional? → Extract fictional trait  
+   - Question about actors? → Extract category trait with value "actors" or "NOT_actors"
+   - Question about athletes? → Extract category trait with value "athletes" or "NOT_athletes"
+   - Question about musicians? → Extract category trait with value "musicians" or "NOT_musicians"
+   - Question about fictional? → Extract fictional trait
    - Question about powers? → Extract has_powers trait
    - DON'T infer unrelated traits!
+
+5. **CRITICAL: The trait VALUE must match a word from the QUESTION**
+   - If question says "athlete", value MUST be "athletes" or "NOT_athletes"
+   - If question says "actor", value MUST be "actors" or "NOT_actors"
+   - NEVER extract "actors" when question asks about "athletes"!
+   - NEVER extract "musicians" when question asks about "politicians"!
 
 5. IMPORTANT: Characters can have overlapping traits
    - A character like "Iron Man" could be:
@@ -157,7 +165,11 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 6. Return null if question doesn't clearly map to any available trait
 
 **EXAMPLES:**
+Q: "Is your character an actor?" A: "Yes" → {"key": "category", "value": "actors", "confidence": 0.95}
 Q: "Is your character an actor?" A: "No" → {"key": "category", "value": "NOT_actors", "confidence": 0.9}
+Q: "Is your character an athlete?" A: "Yes" → {"key": "category", "value": "athletes", "confidence": 0.95}
+Q: "Is your character an athlete?" A: "No" → {"key": "category", "value": "NOT_athletes", "confidence": 0.9}
+Q: "Is your character a musician or singer?" A: "No" → {"key": "category", "value": "NOT_musicians", "confidence": 0.9}
 Q: "Is your character fictional?" A: "Yes" → {"key": "fictional", "value": "true", "confidence": 0.95}
 Q: "Is your character male?" A: "Probably" → {"key": "gender", "value": "male", "confidence": 0.75}
 Q: "Does your character have superpowers?" A: "Yes" → {"key": "has_powers", "value": "true", "confidence": 0.95}
@@ -209,6 +221,24 @@ Extract the trait.`
       return null
     }
 
+    // CRITICAL: Validate that extracted value is related to the question
+    // This prevents hallucinations like extracting "actors" when question is about "athletes"
+    if (String(json.key) === 'category') {
+      const questionLower = question.toLowerCase()
+      const extractedValue = value.replace(/^not_/, '') // Strip NOT_ prefix for validation
+
+      // Check if the extracted category appears in or is closely related to the question
+      const isRelated =
+        questionLower.includes(extractedValue) || // Direct match (e.g., "actor" in question, "actors" extracted)
+        questionLower.includes(extractedValue.replace(/s$/, '')) || // Singular form
+        extractedValue.includes(questionLower.match(/(?:actor|athlete|musician|politician|historical)/)?.[0] || '') // Key category word
+
+      if (!isRelated) {
+        console.warn(`[Detective-RAG] FAILED extraction - category "${extractedValue}" not related to question: "${question}"`)
+        return null
+      }
+    }
+
     const trait = {
       key: String(json.key),
       value: String(json.value),
@@ -221,6 +251,76 @@ Extract the trait.`
   } catch (error) {
     console.error('[Detective-RAG] extractTrait error:', error)
     return null
+  }
+}
+
+/**
+ * Guess character beyond database using LLM + web search
+ * Used when no characters in database match the traits
+ */
+async function guessCharacterBeyondDatabase(
+  traits: Trait[],
+  turns: Array<{ question: string; answer: AnswerValue }>
+): Promise<Guess[]> {
+  console.info('[Detective-Beyond] Making educated guesses using LLM')
+  
+  const traitsList = traits.map(t => `- ${t.key}: ${t.value}`).join('\n')
+  const turnsList = turns.map((t, i) => `${i + 1}. Q: "${t.question}" A: ${t.answer}`).join('\n')
+  
+  const prompt = `I'm playing a guessing game where I need to identify a character/person.
+Here are the confirmed traits from the user's answers:
+
+${traitsList}
+
+Q&A History:
+${turnsList}
+
+Based on ONLY these traits and answers, who are the top 3 most likely characters/people?
+
+Consider:
+- Real people (historical figures, celebrities, athletes, politicians, etc.)
+- Fictional characters (from movies, TV, books, games, anime, etc.)
+- Anyone who could match ALL these traits
+
+Return ONLY JSON array of guesses:
+[
+  {"name": "Full Name", "confidence": 0.85, "reason": "brief reason"},
+  {"name": "Full Name", "confidence": 0.70, "reason": "brief reason"},
+  {"name": "Full Name", "confidence": 0.60, "reason": "brief reason"}
+]
+
+IMPORTANT: Base guesses ONLY on the given traits. Don't make random guesses.`
+
+  try {
+    const response = await chatCompletion({
+      model: DETECTIVE_MODEL,
+      messages: [
+        { role: 'system', content: 'You are an expert at identifying characters and people based on traits. Return only valid JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 300,
+    })
+
+    const raw = response.choices[0]?.message?.content || ''
+    console.info('[Detective-Beyond] LLM response:', raw)
+    
+    const json = extractJSON(raw)
+    if (Array.isArray(json)) {
+      const guesses: Guess[] = json.slice(0, 3).map((item: any) => ({
+        name: String(item.name || item.character || 'Unknown'),
+        confidence: Math.min(Math.max(Number(item.confidence || 0.5), 0.1), 0.8) // Cap at 0.8 since not in database
+      }))
+      
+      console.info('[Detective-Beyond] Generated guesses:', guesses)
+      return guesses.filter(g => g.name !== 'Unknown')
+    }
+    
+    console.warn('[Detective-Beyond] Invalid JSON response')
+    return []
+  } catch (error) {
+    console.error('[Detective-Beyond] Error making guesses:', error)
+    return []
   }
 }
 
@@ -307,11 +407,23 @@ async function askNextQuestion(
       }
     }
     
-    // If still 0, admit we don't have this character
-    // Present a "give up" scenario where user can see we tried
-    return {
-      question: `I couldn't find anyone matching all your answers. My database is limited to ${getAllCharacters().length} characters. Your character might not be included yet. Would you like to start a new game?`,
-      topGuesses: []
+    // If still 0, use LLM to make educated guesses beyond the database
+    console.warn('[Detective-RAG] Character not in database - using LLM to make guesses')
+    console.warn('[Detective-RAG] Traits:', traitSummary)
+    
+    try {
+      const guesses = await guessCharacterBeyondDatabase(traits, turns)
+      return {
+        question: `I don't have this character in my database, but based on your answers, is it one of these?`,
+        topGuesses: guesses
+      }
+    } catch (error) {
+      console.error('[Detective-RAG] Failed to guess beyond database:', error)
+      // Even on error, make a final attempt
+      return {
+        question: 'Is your character one of these based on your answers?',
+        topGuesses: []
+      }
     }
   }
 
