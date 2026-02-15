@@ -83,11 +83,35 @@ export async function loadCharacterKnowledge(): Promise<CharacterKnowledge> {
 /**
  * Get all characters from knowledge base
  */
+/**
+ * Check if a character name is valid (not a disambiguation page or junk data)
+ */
+function isValidCharacterName(name: string): boolean {
+  const lower = name.toLowerCase()
+  
+  // Filter out disambiguation pages
+  if (lower.includes('disambiguation')) return false
+  
+  // Filter out list pages
+  if (lower.startsWith('list of')) return false
+  
+  // Filter out pure numbers
+  if (/^\d+$/.test(name.trim())) return false
+  
+  // Filter out very short names (likely errors)
+  if (name.trim().length <= 2) return false
+  
+  return true
+}
+
+/**
+ * Get all valid characters from knowledge base (excludes invalid entries)
+ */
 export function getAllCharacters(): CharacterData[] {
   if (!characterKnowledge) {
     throw new Error('[RAG] Character knowledge not loaded')
   }
-  return Object.values(characterKnowledge.characters)
+  return Object.values(characterKnowledge.characters).filter(c => isValidCharacterName(c.name))
 }
 
 /**

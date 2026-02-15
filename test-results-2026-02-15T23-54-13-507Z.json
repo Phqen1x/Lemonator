@@ -1,0 +1,2494 @@
+{
+  "timestamp": "2026-02-15T23:54:13.508Z",
+  "options": {
+    "numGames": 5,
+    "maxTurns": 25
+  },
+  "metrics": {
+    "totalGames": 5,
+    "successRate": 0,
+    "averageTurns": 25,
+    "guessDistribution": {
+      "firstGuess": 0,
+      "secondGuess": 0,
+      "thirdGuess": 0,
+      "notInTop3": 5
+    },
+    "categoryPerformance": {
+      "anime": {
+        "games": 2,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "athletes": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "actors": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "superheroes": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      }
+    },
+    "hardestCharacters": [
+      {
+        "name": "Ichigo Kurosaki",
+        "turns": 25
+      },
+      {
+        "name": "Wayne Gretzky",
+        "turns": 25
+      },
+      {
+        "name": "Will Smith",
+        "turns": 25
+      },
+      {
+        "name": "Nami",
+        "turns": 25
+      },
+      {
+        "name": "Wolverine",
+        "turns": 25
+      }
+    ]
+  },
+  "results": [
+    {
+      "characterName": "Ichigo Kurosaki",
+      "category": "anime",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "Edward Elric",
+        "Goku",
+        "Green Lantern"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "has_powers",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 8
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.6093298104639711
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.6088265649585372
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.5998579157354238
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.6081043444304746
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.6028688033642714
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.6014648850742467
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.6027351449809417
+            },
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.6009493158221997
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.5963279801617077
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.95
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.95
+            },
+            {
+              "name": "Harry S. Truman",
+              "confidence": 0.9257284014546162
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Chandler Bing",
+              "confidence": 0.95
+            },
+            {
+              "name": "Daryl Dixon",
+              "confidence": 0.95
+            },
+            {
+              "name": "Dwight Schrute",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superpowers?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superhuman speed?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong, physical presence or combat abilities?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong connection to a specific team or group?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong, physical presence or combat abilities?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.95
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.95
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.95
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Wayne Gretzky",
+      "category": "athletes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "Michael Jordan"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 11
+        },
+        {
+          "key": "category",
+          "value": "athletes",
+          "confidence": 0.95,
+          "turnAdded": 12
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.6066564743901649
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.6041979060988756
+            },
+            {
+              "name": "Nicolas Sarkozy",
+              "confidence": 0.5997096558505622
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Nicolas Sarkozy",
+              "confidence": 0.5984111183251585
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.5954242280437563
+            },
+            {
+              "name": "Emmanuel Macron",
+              "confidence": 0.5942660564476299
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.6097350233117577
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.591455268124058
+            },
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.5881777474819756
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.9408371360194251
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.939709904852251
+            },
+            {
+              "name": "David Cameron",
+              "confidence": 0.9364335144037822
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.95
+            },
+            {
+              "name": "Bill Clinton",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Michael Jordan",
+              "confidence": 0.95
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Will Smith",
+      "category": "actors",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "Al Pacino",
+        "Brad Pitt",
+        "Denzel Washington"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.95,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "actors",
+          "confidence": 0.95,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 10
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 14
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 16
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 18
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 20
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 24
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "François Hollande",
+              "confidence": 0.6063519604472718
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.6028108675337034
+            },
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.595137246159669
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.6027780916213542
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.6018220566187571
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.5938655476492148
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.6035936533871434
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.594824134623037
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.5930274551047416
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "David Cameron",
+              "confidence": 0.9335308791915106
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.9324656121851846
+            },
+            {
+              "name": "David Bowie",
+              "confidence": 0.9322269431424967
+            }
+          ]
+        },
+        {
+          "question": "Is your character from the United Kingdom?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Harrison Ford",
+              "confidence": 0.95
+            },
+            {
+              "name": "Tom Cruise",
+              "confidence": 0.95
+            },
+            {
+              "name": "Christian Bale",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from the United Kingdom?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Johnny Depp",
+              "confidence": 0.95
+            },
+            {
+              "name": "Leonardo DiCaprio",
+              "confidence": 0.95
+            },
+            {
+              "name": "Tom Hanks",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Christian Bale",
+              "confidence": 0.95
+            },
+            {
+              "name": "George Clooney",
+              "confidence": 0.95
+            },
+            {
+              "name": "Hugh Jackman",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Johnny Depp",
+              "confidence": 0.95
+            },
+            {
+              "name": "Ben Affleck",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Harrison Ford",
+              "confidence": 0.95
+            },
+            {
+              "name": "Leonardo DiCaprio",
+              "confidence": 0.95
+            },
+            {
+              "name": "Tom Hanks",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.95
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.95
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Al Pacino",
+              "confidence": 0.57
+            },
+            {
+              "name": "Brad Pitt",
+              "confidence": 0.57
+            },
+            {
+              "name": "Denzel Washington",
+              "confidence": 0.57
+            }
+          ]
+        },
+        {
+          "question": "Is your character primarily known for their physical appearance?",
+          "answer": "no",
+          "topGuesses": []
+        }
+      ]
+    },
+    {
+      "characterName": "Nami",
+      "category": "anime",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "11",
+        "List of My Hero Academia characters",
+        "Black panther (disambiguation)"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.95,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 11
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 13
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Emmanuel Macron",
+              "confidence": 0.6088590456602754
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.6060672921876022
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.6012121727297149
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.6051978285461401
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.6031031629954033
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.5975329303188909
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.6081497484111392
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.6079125687963418
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.5958472310298288
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.9462714105282912
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.9353955988793411
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.9328981282045086
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Wolverine",
+      "category": "superheroes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "11",
+        "List of My Hero Academia characters",
+        "Black panther (disambiguation)"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.95,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 11
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 13
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.6036943925958987
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.594724708693236
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.5932950766274894
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.6004706695959781
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.5977327980632098
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5972225361479613
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.6061358687566675
+            },
+            {
+              "name": "Nicolas Sarkozy",
+              "confidence": 0.6025840370742687
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.6019357661563771
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.9458087084892779
+            },
+            {
+              "name": "David Cameron",
+              "confidence": 0.939614188021409
+            },
+            {
+              "name": "David Bowie",
+              "confidence": 0.9342638528898745
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.95
+            },
+            {
+              "name": "Bill Clinton",
+              "confidence": 0.95
+            },
+            {
+              "name": "Chandler Bing",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "Abraham Lincoln",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "11",
+              "confidence": 0.95
+            },
+            {
+              "name": "List of My Hero Academia characters",
+              "confidence": 0.95
+            },
+            {
+              "name": "Black panther (disambiguation)",
+              "confidence": 0.95
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
