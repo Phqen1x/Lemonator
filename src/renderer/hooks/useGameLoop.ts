@@ -122,6 +122,7 @@ export function useGameLoop() {
   }, [dispatch, generateImageInBackground])
 
   const resetGame = useCallback(() => {
+    resetSessionLearning() // Reset learning for new game
     dispatch({ type: 'RESET' })
   }, [dispatch])
 

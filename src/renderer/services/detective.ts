@@ -18,6 +18,7 @@ interface SessionLearning {
     name: string
     traitsWhenGuessed: Trait[]
     turnRejected: number
+    series?: string  // Track what series/franchise the character is from
   }>
   
   // Questions that got "don't know" answers (ambiguous/unclear)
@@ -176,12 +177,77 @@ export function resetSessionLearning(): void {
   console.info('[Detective] Session learning reset for new game')
 }
 
+// Helper: Detect series/franchise from character name
+function detectSeries(characterName: string): string | undefined {
+  const name = characterName.toLowerCase()
+  
+  // Naruto universe
+  if (['naruto', 'sasuke', 'sakura', 'kakashi', 'itachi', 'madara', 'gaara', 'hinata', 'rock lee'].some(n => name.includes(n))) {
+    return 'Naruto'
+  }
+  
+  // Dragon Ball
+  if (['goku', 'vegeta', 'gohan', 'piccolo', 'frieza', 'cell', 'buu', 'bulma', 'krillin'].some(n => name.includes(n))) {
+    return 'Dragon Ball'
+  }
+  
+  // One Piece
+  if (['luffy', 'zoro', 'nami', 'sanji', 'robin', 'chopper', 'usopp', 'franky', 'brook'].some(n => name.includes(n))) {
+    return 'One Piece'
+  }
+  
+  // Attack on Titan
+  if (['eren', 'mikasa', 'armin', 'levi', 'erwin'].some(n => name.includes(n))) {
+    return 'Attack on Titan'
+  }
+  
+  // My Hero Academia
+  if (['deku', 'midoriya', 'bakugo', 'uraraka', 'todoroki', 'all might'].some(n => name.includes(n))) {
+    return 'My Hero Academia'
+  }
+  
+  // Death Note
+  if (['light', 'yagami', 'l lawliet', 'ryuk', 'misa'].some(n => name.includes(n))) {
+    return 'Death Note'
+  }
+  
+  // Demon Slayer
+  if (['tanjiro', 'nezuko', 'zenitsu', 'inosuke', 'muzan'].some(n => name.includes(n))) {
+    return 'Demon Slayer'
+  }
+  
+  // Marvel
+  if (['iron man', 'captain america', 'spider-man', 'spiderman', 'hulk', 'thor', 'black widow', 'hawkeye', 'thanos'].some(n => name.includes(n))) {
+    return 'Marvel'
+  }
+  
+  // DC Comics
+  if (['superman', 'batman', 'wonder woman', 'joker', 'lex luthor'].some(n => name.includes(n))) {
+    return 'DC Comics'
+  }
+  
+  // Harry Potter
+  if (['harry potter', 'hermione', 'voldemort', 'dumbledore', 'snape'].some(n => name.includes(n))) {
+    return 'Harry Potter'
+  }
+  
+  // Star Wars
+  if (['luke skywalker', 'leia', 'darth vader', 'han solo', 'yoda'].some(n => name.includes(n))) {
+    return 'Star Wars'
+  }
+  
+  return undefined
+}
+
 // Record a rejected guess to learn from it
 export function recordRejectedGuess(characterName: string, traitsAtRejection: Trait[], turnNumber: number): void {
+  const series = detectSeries(characterName)
+  
   sessionLearning.rejectedCharacters.push({
     name: characterName,
     traitsWhenGuessed: [...traitsAtRejection],
-    turnRejected: turnNumber
+    turnRejected: turnNumber,
+    series
   })
   
   // Infer what traits this character DOESN'T have based on confirmed traits
@@ -193,6 +259,9 @@ export function recordRejectedGuess(characterName: string, traitsAtRejection: Tr
   sessionLearning.learnedCharacterTraits[characterName.toLowerCase()] = learned
   
   console.info(`[Detective] Learned from rejection: ${characterName} does NOT match current traits`)
+  if (series) {
+    console.info(`[Detective] Detected series: ${series}`)
+  }
   console.info(`[Detective] Learned traits for ${characterName}:`, learned)
 }
 
@@ -498,6 +567,16 @@ function isLogicallyIncompatible(question: string, traits: Trait[]): boolean {
       console.info(`[Detective] Question "${question}" asks about fantasy element but character is real`)
       return true
     }
+    
+    // Real people don't originate in fictional media
+    const fictionalOriginQuestions = [
+      'originate in', 'originated in', 'from an anime', 'from a manga', 'from a video game',
+      'from a game', 'from a comic', 'from a movie', 'from a tv show', 'from a cartoon'
+    ]
+    if (fictionalOriginQuestions.some(elem => lowerQ.includes(elem))) {
+      console.info(`[Detective] Question "${question}" asks about fictional origin but character is real`)
+      return true
+    }
   }
   
   return false
@@ -513,62 +592,516 @@ async function isGuessCompatible(guessName: string, traits: Trait[]): Promise<bo
   const gender = traits.find(t => t.key === 'gender')?.value?.toLowerCase()
   const fictional = traits.find(t => t.key === 'fictional')?.value?.toLowerCase()
   const alignment = traits.find(t => t.key === 'alignment')?.value?.toLowerCase()
+  const originMedium = traits.find(t => t.key === 'origin_medium')?.value?.toLowerCase()
   
   // Known character trait database (expand as needed)
-  const characterTraits: Record<string, { powers: boolean; gender: string; species: string; fictional: boolean; alignment?: string }> = {
+  const characterTraits: Record<string, { powers: boolean; gender: string; species: string; fictional: boolean; alignment?: string; origin?: string }> = {
     // Fictional characters
-    'superman': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero' },
-    'batman': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'wonder woman': { powers: true, gender: 'female', species: 'demigod', fictional: true, alignment: 'hero' },
-    'iron man': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'captain america': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'spider-man': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'spiderman': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'hulk': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'thor': { powers: true, gender: 'male', species: 'god', fictional: true, alignment: 'hero' },
-    'black widow': { powers: false, gender: 'female', species: 'human', fictional: true, alignment: 'hero' },
-    'hawkeye': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'joker': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'villain' },
-    'lex luthor': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'villain' },
-    'darth vader': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain' },
-    'thanos': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'villain' },
-    'harry potter': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'hermione granger': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero' },
-    'voldemort': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain' },
-    'luke skywalker': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero' },
-    'leia organa': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero' },
-    'sherlock holmes': { powers: false, gender: 'male', species: 'human', fictional: true },
-    'frodo baggins': { powers: false, gender: 'male', species: 'hobbit', fictional: true, alignment: 'hero' },
-    'gandalf': { powers: true, gender: 'male', species: 'wizard', fictional: true },
-    'mickey mouse': { powers: false, gender: 'male', species: 'mouse', fictional: true },
-    'donald duck': { powers: false, gender: 'male', species: 'duck', fictional: true },
+    'superman': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'batman': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'wonder woman': { powers: true, gender: 'female', species: 'demigod', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'iron man': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'captain america': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'spider-man': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'spiderman': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'hulk': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'thor': { powers: true, gender: 'male', species: 'god', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'black widow': { powers: false, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'hawkeye': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'comic book' },
+    'joker': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'comic book' },
+    'lex luthor': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'comic book' },
+    'darth vader': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'movie' },
+    'thanos': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'villain', origin: 'comic book' },
+    'harry potter': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'book' },
+    'hermione granger': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'book' },
+    'voldemort': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'book' },
+    'luke skywalker': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'movie' },
+    'leia organa': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'movie' },
+    'sherlock holmes': { powers: false, gender: 'male', species: 'human', fictional: true, origin: 'book' },
+    'frodo baggins': { powers: false, gender: 'male', species: 'hobbit', fictional: true, alignment: 'hero', origin: 'book' },
+    'gandalf': { powers: true, gender: 'male', species: 'wizard', fictional: true, origin: 'book' },
+    'mickey mouse': { powers: false, gender: 'male', species: 'mouse', fictional: true, origin: 'cartoon' },
+    'donald duck': { powers: false, gender: 'male', species: 'duck', fictional: true, origin: 'cartoon' },
     
-    // Real people (historical figures, politicians, celebrities)
+    // Anime characters - Naruto
+    'naruto uzumaki': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'naruto': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'sasuke uchiha': { powers: true, gender: 'male', species: 'human', fictional: true, origin: 'anime' },
+    'sasuke': { powers: true, gender: 'male', species: 'human', fictional: true, origin: 'anime' },
+    'sakura haruno': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'sakura': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'kakashi hatake': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'kakashi': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'itachi uchiha': { powers: true, gender: 'male', species: 'human', fictional: true, origin: 'anime' },
+    'itachi': { powers: true, gender: 'male', species: 'human', fictional: true, origin: 'anime' },
+    'madara uchiha': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'anime' },
+    'madara': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'anime' },
+    'hinata hyuga': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'hinata': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'gaara': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'rock lee': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - Dragon Ball
+    'goku': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero', origin: 'anime' },
+    'son goku': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero', origin: 'anime' },
+    'vegeta': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero', origin: 'anime' },
+    'gohan': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero', origin: 'anime' },
+    'piccolo': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'hero', origin: 'anime' },
+    'frieza': { powers: true, gender: 'male', species: 'alien', fictional: true, alignment: 'villain', origin: 'anime' },
+    'cell': { powers: true, gender: 'male', species: 'android', fictional: true, alignment: 'villain', origin: 'anime' },
+    'majin buu': { powers: true, gender: 'male', species: 'demon', fictional: true, alignment: 'villain', origin: 'anime' },
+    'bulma': { powers: false, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'krillin': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - One Piece
+    'monkey d luffy': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'luffy': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'roronoa zoro': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'zoro': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'nami': { powers: false, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'sanji': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'nico robin': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'tony tony chopper': { powers: true, gender: 'male', species: 'reindeer', fictional: true, alignment: 'hero', origin: 'anime' },
+    'chopper': { powers: true, gender: 'male', species: 'reindeer', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - Attack on Titan
+    'eren yeager': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'eren jaeger': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'eren': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'mikasa ackerman': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'mikasa': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'armin arlert': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'armin': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'levi ackerman': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'levi': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - My Hero Academia
+    'izuku midoriya': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'deku': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'katsuki bakugo': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'bakugo': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'ochaco uraraka': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'uraraka': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'shoto todoroki': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'todoroki': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'all might': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - Death Note
+    'light yagami': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'anime' },
+    'light': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'villain', origin: 'anime' },
+    'l lawliet': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'l': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'ryuk': { powers: true, gender: 'male', species: 'demon', fictional: true, origin: 'anime' },
+    'misa amane': { powers: true, gender: 'female', species: 'human', fictional: true, origin: 'anime' },
+    
+    // Anime characters - Demon Slayer
+    'tanjiro kamado': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'tanjiro': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'nezuko kamado': { powers: true, gender: 'female', species: 'demon', fictional: true, alignment: 'hero', origin: 'anime' },
+    'nezuko': { powers: true, gender: 'female', species: 'demon', fictional: true, alignment: 'hero', origin: 'anime' },
+    'zenitsu agatsuma': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'zenitsu': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'inosuke hashibira': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'inosuke': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'muzan kibutsuji': { powers: true, gender: 'male', species: 'demon', fictional: true, alignment: 'villain', origin: 'anime' },
+    
+    // Anime characters - Fullmetal Alchemist
+    'edward elric': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'edward': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'alphonse elric': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'alphonse': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'roy mustang': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - Bleach
+    'ichigo kurosaki': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'ichigo': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'rukia kuchiki': { powers: true, gender: 'female', species: 'shinigami', fictional: true, alignment: 'hero', origin: 'anime' },
+    'rukia': { powers: true, gender: 'female', species: 'shinigami', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - Sword Art Online
+    'kirito': { powers: true, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'asuna': { powers: true, gender: 'female', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Anime characters - Pokemon
+    'ash ketchum': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'ash': { powers: false, gender: 'male', species: 'human', fictional: true, alignment: 'hero', origin: 'anime' },
+    'pikachu': { powers: true, gender: 'male', species: 'pokemon', fictional: true, alignment: 'hero', origin: 'anime' },
+    
+    // Real people - Politicians & World Leaders
     'abraham lincoln': { powers: false, gender: 'male', species: 'human', fictional: false },
     'george washington': { powers: false, gender: 'male', species: 'human', fictional: false },
     'john f kennedy': { powers: false, gender: 'male', species: 'human', fictional: false },
     'jfk': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'donald trump': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'joe biden': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'barack obama': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ronald reagan': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'bill clinton': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'hillary clinton': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'franklin roosevelt': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'fdr': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'theodore roosevelt': { powers: false, gender: 'male', species: 'human', fictional: false },
     'winston churchill': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'albert einstein': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'margaret thatcher': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'vladimir putin': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'angela merkel': { powers: false, gender: 'female', species: 'human', fictional: false },
     'martin luther king': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'martin luther king jr': { powers: false, gender: 'male', species: 'human', fictional: false },
     'nelson mandela': { powers: false, gender: 'male', species: 'human', fictional: false },
     'mahatma gandhi': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'leonardo da vinci': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'william shakespeare': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - American Founding Fathers
+    'thomas jefferson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'benjamin franklin': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'alexander hamilton': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'john adams': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'james madison': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'patrick henry': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'paul revere': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Ancient World Leaders & Conquerors
+    'napoleon bonaparte': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'napoleon': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'julius caesar': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'alexander the great': { powers: false, gender: 'male', species: 'human', fictional: false },
     'cleopatra': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'genghis khan': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'attila the hun': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'hannibal': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'spartacus': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'king solomon': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'king david': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ramses ii': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'tutankhamun': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'king tut': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Medieval & Renaissance Royalty
     'queen elizabeth': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'queen elizabeth ii': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'queen victoria': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'king henry viii': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'henry viii': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'anne boleyn': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'catherine the great': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'louis xiv': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'marie antoinette': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'charlemagne': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'richard the lionheart': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'william the conqueror': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Revolutionary Leaders
+    'vladimir lenin': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'joseph stalin': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mao zedong': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'che guevara': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'fidel castro': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'leon trotsky': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'simón bolívar': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - World War Era
+    'adolf hitler': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'benito mussolini': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'dwight eisenhower': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'douglas macarthur': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'george patton': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'franklin d roosevelt': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'harry truman': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Civil Rights & Social Activists
+    'rosa parks': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'malcolm x': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'harriet tubman': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'frederick douglass': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'susan b anthony': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'sojourner truth': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'emmeline pankhurst': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'cesar chavez': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Religious & Spiritual Leaders
+    'jesus christ': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jesus': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'muhammad': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'prophet muhammad': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'buddha': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'siddhartha gautama': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'moses': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'confucius': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'martin luther': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'dalai lama': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mother teresa': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'pope john paul ii': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'joan of arc': { powers: false, gender: 'female', species: 'human', fictional: false },
+    
+    // Real people - Explorers & Adventurers
+    'christopher columbus': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'marco polo': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ferdinand magellan': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'vasco da gama': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'amerigo vespucci': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'hernán cortés': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'francisco pizarro': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'james cook': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'meriwether lewis': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'william clark': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'roald amundsen': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ernest shackleton': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'neil armstrong': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'amelia earhart': { powers: false, gender: 'female', species: 'human', fictional: false },
+    
+    // Real people - Philosophers & Thinkers
+    'socrates': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'plato': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'aristotle': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'rené descartes': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'immanuel kant': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'friedrich nietzsche': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'karl marx': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'john locke': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jean-jacques rousseau': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'voltaire': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'sigmund freud': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'carl jung': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Scientists & Inventors
+    'albert einstein': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'isaac newton': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'charles darwin': { powers: false, gender: 'male', species: 'human', fictional: false },
     'marie curie': { powers: false, gender: 'female', species: 'human', fictional: false },
     'nikola tesla': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'thomas edison': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'stephen hawking': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'galileo galilei': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'galileo': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'leonardo da vinci': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'alexander graham bell': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'orville wright': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'wilbur wright': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'wright brothers': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'henry ford': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'louis pasteur': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'dmitri mendeleev': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'gregor mendel': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'johannes kepler': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'nicolaus copernicus': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'archimedes': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'pythagoras': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'euclid': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'alan turing': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ada lovelace': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'grace hopper': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'rosalind franklin': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'jane goodall': { powers: false, gender: 'female', species: 'human', fictional: false },
+    
+    // Real people - Artists & Writers
+    'pablo picasso': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'vincent van gogh': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'van gogh': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'michelangelo': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'rembrandt': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'claude monet': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'salvador dali': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'frida kahlo': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'andy warhol': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'banksy': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'william shakespeare': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'shakespeare': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mark twain': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ernest hemingway': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jane austen': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'charles dickens': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'edgar allan poe': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'f scott fitzgerald': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'george orwell': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'leo tolstoy': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'fyodor dostoevsky': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'homer': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'dante alighieri': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'virginia woolf': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'maya angelou': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'j k rowling': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'stephen king': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'j r r tolkien': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'c s lewis': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Movie Stars & Actors
+    // Classic Hollywood
+    'marilyn monroe': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'audrey hepburn': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'james dean': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'humphrey bogart': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'cary grant': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'katharine hepburn': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'elizabeth taylor': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'john wayne': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'clint eastwood': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Modern Male Movie Stars
+    'tom hanks': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'leonardo dicaprio': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'brad pitt': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'morgan freeman': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'denzel washington': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'robert de niro': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'al pacino': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'will smith': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'johnny depp': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'keanu reeves': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'harrison ford': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'samuel l jackson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'samuel l. jackson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'matt damon': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'george clooney': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ben affleck': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'christian bale': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'ryan gosling': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'chris hemsworth': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'chris evans': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'chris pratt': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'robert downey jr': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mark wahlberg': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'dwayne johnson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'the rock': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'vin diesel': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'adam sandler': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jim carrey': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'robin williams': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'tom cruise': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'matthew mcconaughey': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Modern Female Movie Stars
+    'meryl streep': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'angelina jolie': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'scarlett johansson': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'jennifer lawrence': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'emma watson': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'natalie portman': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'charlize theron': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'sandra bullock': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'julia roberts': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'jennifer aniston': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'reese witherspoon': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'nicole kidman': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'cate blanchett': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'anne hathaway': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'emma stone': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'amy adams': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'margot robbie': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'gal gadot': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'zendaya': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'kristen stewart': { powers: false, gender: 'female', species: 'human', fictional: false },
+    
+    // TV Actors (Comedy)
+    'jerry seinfeld': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'steve carell': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'tina fey': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'amy poehler': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'ellen degeneres': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'conan obrien': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jimmy fallon': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'stephen colbert': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // TV Actors (Drama)
+    'bryan cranston': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'aaron paul': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'peter dinklage': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'emilia clarke': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'kit harington': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'sophie turner': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'maisie williams': { powers: false, gender: 'female', species: 'human', fictional: false },
+    
+    // Real people - Musicians & Entertainers
+    'elvis presley': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'elvis': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'michael jackson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'john lennon': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'paul mccartney': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'freddie mercury': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'david bowie': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'bob dylan': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'madonna': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'beyonce': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'taylor swift': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'lady gaga': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'rihanna': { powers: false, gender: 'female', species: 'human', fictional: false },
+    
+    // Real people - Athletes
+    // Basketball
+    'michael jordan': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'lebron james': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'kobe bryant': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'stephen curry': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'steph curry': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'shaquille oneal': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'shaq': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'magic johnson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'larry bird': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'kareem abdul-jabbar': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // American Football
+    'tom brady': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'patrick mahomes': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'joe montana': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'peyton manning': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jerry rice': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'brett favre': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'aaron rodgers': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Baseball
+    'babe ruth': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jackie robinson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'derek jeter': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'hank aaron': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mickey mantle': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Boxing/MMA
+    'muhammad ali': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mike tyson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'floyd mayweather': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'conor mcgregor': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Track & Field
+    'usain bolt': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jesse owens': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'carl lewis': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'michael phelps': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Tennis
+    'serena williams': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'venus williams': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'roger federer': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'rafael nadal': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'novak djokovic': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'pete sampras': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'john mcenroe': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Golf
+    'tiger woods': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jack nicklaus': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'phil mickelson': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'arnold palmer': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Soccer
+    'lionel messi': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'cristiano ronaldo': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'megan rapinoe': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'alex morgan': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'pele': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Hockey
+    'wayne gretzky': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Other sports
+    'simone biles': { powers: false, gender: 'female', species: 'human', fictional: false },
+    'tony hawk': { powers: false, gender: 'male', species: 'human', fictional: false },
+    
+    // Real people - Business & Tech
     'elon musk': { powers: false, gender: 'male', species: 'human', fictional: false },
     'steve jobs': { powers: false, gender: 'male', species: 'human', fictional: false },
     'bill gates': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'jeff bezos': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'mark zuckerberg': { powers: false, gender: 'male', species: 'human', fictional: false },
+    'warren buffett': { powers: false, gender: 'male', species: 'human', fictional: false },
     'oprah winfrey': { powers: false, gender: 'female', species: 'human', fictional: false },
-    'michael jordan': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'muhammad ali': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'elvis presley': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'michael jackson': { powers: false, gender: 'male', species: 'human', fictional: false },
-    'beyonce': { powers: false, gender: 'female', species: 'human', fictional: false },
-    'taylor swift': { powers: false, gender: 'female', species: 'human', fictional: false },
   }
   
   let charTraits = characterTraits[name]
@@ -638,6 +1171,35 @@ async function isGuessCompatible(guessName: string, traits: Trait[]): Promise<bo
     }
   }
   
+  // Check origin_medium compatibility
+  if (originMedium) {
+    const normalizedOrigin = originMedium.toLowerCase()
+    const charOrigin = charTraits.origin?.toLowerCase()
+    
+    // Map user's answer to database values
+    const originMappings: Record<string, string[]> = {
+      'anime': ['anime', 'manga'],
+      'manga': ['anime', 'manga'],
+      'comic book': ['comic book', 'comic'],
+      'comic': ['comic book', 'comic'],
+      'video game': ['video game', 'game'],
+      'game': ['video game', 'game'],
+      'movie': ['movie', 'film'],
+      'film': ['movie', 'film'],
+      'tv show': ['tv show', 'tv', 'television'],
+      'television': ['tv show', 'tv', 'television'],
+      'book': ['book', 'novel'],
+    }
+    
+    if (charOrigin) {
+      const allowedOrigins = originMappings[normalizedOrigin] || [normalizedOrigin]
+      if (!allowedOrigins.includes(charOrigin)) {
+        console.info(`[Detective] Filtering guess "${guessName}" - origin is "${charOrigin}" but user said origin_medium is "${originMedium}"`)
+        return false
+      }
+    }
+  }
+  
   return true
 }
 
@@ -688,11 +1250,123 @@ const FALLBACK_QUESTIONS = [
   'Is your character fictional?',
   'Is your character male?',
   'Is your character human?',
+  
+  // Real person questions (for non-fictional characters)
+  'Was your character a political leader?',
+  'Is your character from the United States?',
+  'Is your character an athlete or sports figure?',
+  'Was your character alive in the 20th century?',
+  'Is your character known for science or technology?',
+  'Is your character a business person or entrepreneur?',
+  'Was your character a president or head of state?',
+  'Is your character known for entertainment (actor, musician, etc.)?',
+  
+  // Athlete-specific questions (use after athlete is confirmed)
+  'Is your character a basketball player?',
+  'Is your character a football player?',
+  'Is your character a baseball player?',
+  'Is your character a boxer or fighter?',
+  'Is your character a tennis player?',
+  'Is your character a golfer?',
+  'Is your character a soccer player?',
+  'Is your character a track and field athlete?',
+  'Is your character an Olympic athlete?',
+  'Did your character win championships or titles?',
+  'Is your character considered one of the greatest in their sport?',
+  'Is your character retired from their sport?',
+  'Does your character play for or did they play for an American team?',
+  
+  // Fictional media origin questions
   'Did your character originate in an anime or manga series?',
   'Did your character originate in a video game?',
   'Did your character originate in a comic book?',
   'Did your character originate in a movie?',
   'Did your character originate in a TV show?',
+  
+  // Anime-specific questions (use after anime is confirmed)
+  'Is your character a ninja?',
+  'Does your character have spiky hair?',
+  'Does your character have a unique eye ability or power?',
+  'Does your character use special techniques or jutsu?',
+  'Is your character part of a specific team or squad?',
+  'Does your character transform or power up?',
+  'Is your character associated with a specific village or organization?',
+  'Does your character wear a headband or forehead protector?',
+  'Does your character have a special ability related to their eyes?',
+  
+  // Anime series-specific questions (CRITICAL for narrowing down)
+  'Is your character from the Naruto series?',
+  'Is your character from the Dragon Ball series?',
+  'Is your character from the One Piece series?',
+  'Is your character from the Attack on Titan series?',
+  'Is your character from the My Hero Academia series?',
+  'Is your character from the Death Note series?',
+  'Is your character from the Demon Slayer series?',
+  'Is your character from the Bleach series?',
+  'Is your character from the Fullmetal Alchemist series?',
+  
+  // Movie/TV Actor-specific questions (use after actor/entertainer is confirmed)
+  'Is your character known for action movies?',
+  'Is your character known for comedy movies or shows?',
+  'Is your character known for dramatic roles?',
+  'Has your character won an Oscar or Academy Award?',
+  'Is your character known for superhero movies?',
+  'Did your character star in a Marvel movie?',
+  'Did your character star in a DC Comics movie?',
+  'Is your character known for a specific TV series?',
+  'Was your character in a sitcom?',
+  'Was your character in Game of Thrones?',
+  'Was your character in Breaking Bad?',
+  'Was your character in Friends?',
+  'Was your character in The Office?',
+  'Did your character star in Star Wars movies?',
+  'Did your character star in Harry Potter movies?',
+  'Is your character known for playing James Bond?',
+  'Did your character star in Jurassic Park?',
+  'Did your character star in The Godfather?',
+  'Did your character star in Pirates of the Caribbean?',
+  'Did your character star in Titanic?',
+  'Did your character star in The Avengers?',
+  'Did your character star in The Dark Knight trilogy?',
+  'Is your character primarily a TV actor rather than movie star?',
+  'Is your character known for late night talk shows?',
+  'Is your character considered a Hollywood legend?',
+  
+  // Historical figure-specific questions (use after historical era/scientist/philosopher confirmed)
+  'Did your character live in ancient times (before 500 AD)?',
+  'Did your character live in medieval times (500-1500 AD)?',
+  'Did your character live during the Renaissance (1400-1600)?',
+  'Did your character live in the 18th century (1700s)?',
+  'Did your character live in the 19th century (1800s)?',
+  'Was your character a military leader or general?',
+  'Was your character a king, queen, or emperor?',
+  'Was your character a philosopher or thinker?',
+  'Was your character a religious or spiritual leader?',
+  'Was your character an explorer or adventurer?',
+  'Did your character discover or explore new lands?',
+  'Was your character involved in a war?',
+  'Was your character involved in World War I or World War II?',
+  'Was your character involved in the American Revolution?',
+  'Was your character a founding father of the United States?',
+  'Was your character involved in the Civil Rights Movement?',
+  'Was your character an inventor who changed history?',
+  'Did your character invent something related to electricity?',
+  'Did your character invent something related to transportation?',
+  'Did your character make discoveries about physics?',
+  'Did your character make discoveries about biology or medicine?',
+  'Did your character make contributions to mathematics?',
+  'Was your character an artist or painter?',
+  'Was your character a writer or poet?',
+  'Was your character assassinated or killed in battle?',
+  'Did your character lead a revolution or rebellion?',
+  'Was your character a dictator or authoritarian ruler?',
+  'Was your character from ancient Greece or Rome?',
+  'Was your character from ancient Egypt?',
+  'Did your character write famous books or texts?',
+  'Is your character known for a specific discovery or invention?',
+  'Did your character travel to space or the moon?',
+  
+  // Common to both
   'Does your character have supernatural powers or abilities?',
   'Does your character have a distinctive hair color (not black or brown)?',
   'Does your character typically wear armor or a costume?',
@@ -774,6 +1448,29 @@ const FALLBACK_QUESTIONS = [
 
 function pickFallback(prevQuestions: string[], confirmedTraitKeys: Set<string>, traits: Trait[]): string {
   console.info('[Detective] Picking fallback. Already asked:', prevQuestions.length, 'questions')
+  
+  // PRIORITY: If we have rejected a character from a known series, ask about that series first!
+  if (sessionLearning.rejectedCharacters.length > 0) {
+    const rejectedSeries = new Set<string>()
+    for (const rejected of sessionLearning.rejectedCharacters) {
+      if (rejected.series) {
+        rejectedSeries.add(rejected.series)
+      }
+    }
+    
+    // Check if we've already asked about these series
+    for (const series of rejectedSeries) {
+      const seriesQuestion = `Is your character from the ${series} series?`
+      const alreadyAsked = prevQuestions.some(q => 
+        q.toLowerCase().includes(series.toLowerCase()) && q.toLowerCase().includes('series')
+      )
+      
+      if (!alreadyAsked) {
+        console.info(`[Detective] PRIORITY FALLBACK: Series follow-up for rejected "${series}"`)
+        return seriesQuestion
+      }
+    }
+  }
   
   // Normalize previous questions for comparison
   const normalizedPrevious = prevQuestions.map(q => 
@@ -895,8 +1592,38 @@ async function extractTrait(
     console.warn('[Detective] extractTrait: Invalid value rejected:', value)
     return null
   }
+  
+  // Validate that the extracted trait key actually appears in the question
+  const questionLower = question.toLowerCase()
+  const key = String(json.key)
+  
+  console.info(`[Detective] extractTrait validation - key: "${key}", question: "${question}"`)
+  
+  // Strict validation: trait key must be mentioned in the question
+  const keyValidation: Record<string, string[]> = {
+    'gender': ['male', 'female', 'man', 'woman', 'boy', 'girl', 'gender'],
+    'species': ['human', 'animal', 'alien', 'robot', 'creature', 'species'],
+    'has_powers': ['power', 'powers', 'ability', 'abilities', 'supernatural', 'magic'],
+    'fictional': ['fictional', 'real', 'reality', 'imaginary', 'exist'],
+    'origin_medium': ['originate', 'originated', 'from', 'anime', 'manga', 'game', 'movie', 'show', 'comic', 'book'],
+    'alignment': ['hero', 'villain', 'antagonist', 'protagonist', 'good', 'evil', 'bad'],
+    'accessories': ['accessory', 'accessories', 'glasses', 'eyewear', 'jewelry', 'necklace', 'wear'],
+    'hair_color': ['hair', 'blonde', 'brunette', 'redhead', 'black-haired'],
+    'clothing': ['wear', 'costume', 'armor', 'clothes', 'clothing', 'suit', 'dress'],
+    'nationality': ['from', 'country', 'nation', 'nationality', 'united states', 'america', 'japan', 'england', 'france', 'germany'],
+    'occupation_category': ['occupation', 'job', 'profession', 'work', 'politician', 'athlete', 'scientist', 'artist', 'actor', 'musician'],
+    'historical_era': ['century', 'era', 'period', 'ancient', 'modern', 'medieval', 'historical'],
+    'anime_role': ['ninja', 'samurai', 'pirate', 'shinobi', 'shinigami'],
+    'anime_ability': ['jutsu', 'technique', 'sharingan', 'byakugan', 'transform', 'power up', 'eye ability'],
+    'anime_series': ['naruto', 'dragon ball', 'one piece', 'bleach', 'attack on titan', 'series'],
+  }
+  
+  const keywords = keyValidation[key]
+  if (keywords && !keywords.some(kw => questionLower.includes(kw))) {
+    console.warn(`[Detective] extractTrait: Trait key "${key}" does not match question keywords. Question: "${question}" - REJECTED`)
+    return null
+  }
 
-  let key = String(json.key)
   let finalValue = String(json.value)
 
   const isNegativeAnswer = answer === 'no' || answer === 'probably_not'
@@ -904,7 +1631,7 @@ async function extractTrait(
 
   // Client-side fix: "no" to specific-category questions should not create traits
   // These keys can have many possible values, so "no" to one doesn't tell us what it IS
-  const specificCategoryKeys = ['origin_medium', 'hair_color', 'eye_color', 'clothing', 'accessories', 'skin_color']
+  const specificCategoryKeys = ['origin_medium', 'hair_color', 'eye_color', 'clothing', 'accessories', 'skin_color', 'nationality', 'occupation_category', 'historical_era', 'anime_series']
   if (specificCategoryKeys.includes(key) && isNegativeAnswer) {
     console.warn(`[Detective] Rejecting ${key} extraction from "no" answer to specific question`)
     return null
@@ -912,13 +1639,28 @@ async function extractTrait(
 
   // Client-side fix: Validate real/fictional logic
   // "Is your character real?" + "no" should give fictional=true (not fictional=false)
-  if (key === 'fictional' && question.toLowerCase().includes('real')) {
-    if (isNegativeAnswer && finalValue.toLowerCase() === 'false') {
-      console.warn('[Detective] Correcting fictional extraction: real=no means fictional=true')
-      finalValue = 'true'
-    } else if (isPositiveAnswer && finalValue.toLowerCase() === 'true') {
-      console.warn('[Detective] Correcting fictional extraction: real=yes means fictional=false')
-      finalValue = 'false'
+  // "Is your character fictional?" + "no" should give fictional=false (not fictional=true)
+  if (key === 'fictional') {
+    const questionLowerForFictional = question.toLowerCase()
+    
+    if (questionLowerForFictional.includes('real')) {
+      // Question asks "Is your character real?"
+      if (isNegativeAnswer && finalValue.toLowerCase() === 'false') {
+        console.warn('[Detective] Correcting fictional extraction: real=no means fictional=true')
+        finalValue = 'true'
+      } else if (isPositiveAnswer && finalValue.toLowerCase() === 'true') {
+        console.warn('[Detective] Correcting fictional extraction: real=yes means fictional=false')
+        finalValue = 'false'
+      }
+    } else if (questionLowerForFictional.includes('fictional')) {
+      // Question asks "Is your character fictional?"
+      if (isNegativeAnswer && finalValue.toLowerCase() === 'true') {
+        console.warn('[Detective] Correcting fictional extraction: fictional=no means fictional=false')
+        finalValue = 'false'
+      } else if (isPositiveAnswer && finalValue.toLowerCase() === 'false') {
+        console.warn('[Detective] Correcting fictional extraction: fictional=yes means fictional=true')
+        finalValue = 'true'
+      }
     }
   }
 
@@ -965,7 +1707,11 @@ function inferSecondaryTrait(
   
   // Check if question matches any binary pattern
   for (const pattern of binaryPatterns) {
-    const matchesKeyword = pattern.keywords.some(kw => questionLower.includes(kw))
+    // Use word boundary matching to avoid false matches (e.g., "human" shouldn't match "man")
+    const matchesKeyword = pattern.keywords.some(kw => {
+      const regex = new RegExp(`\\b${kw}\\b`, 'i')
+      return regex.test(questionLower)
+    })
     if (!matchesKeyword) continue
     
     // If we already extracted this trait from the LLM, don't override it
@@ -1016,7 +1762,12 @@ async function askNextQuestion(
     const warnings: string[] = []
     const traitKeySet = new Set(traits.map(t => t.key))
     if (traitKeySet.has('origin_medium')) {
-      warnings.push('  ⚠️ origin_medium is confirmed - DO NOT ask about anime, manga, games, movies, TV shows, or comics')
+      const originValue = traits.find(t => t.key === 'origin_medium')?.value?.toLowerCase()
+      if (originValue === 'anime' || originValue === 'manga') {
+        warnings.push('  ✅ origin_medium = anime - NOW ASK ANIME-SPECIFIC QUESTIONS: ninja, jutsu, spiky hair, eye abilities, transformation, series-specific questions (Naruto, Dragon Ball, One Piece, etc.)')
+      } else {
+        warnings.push('  ⚠️ origin_medium is confirmed - DO NOT ask about other media (anime, manga, games, movies, TV shows, comics)')
+      }
     }
     if (traitKeySet.has('gender')) {
       warnings.push('  ⚠️ gender is confirmed - DO NOT ask about male/female')
@@ -1060,12 +1811,32 @@ async function askNextQuestion(
     const learningLines: string[] = []
     learningLines.push('📚 LEARNED FROM WRONG GUESSES (avoid these patterns):')
     
+    // Track series from rejected guesses
+    const rejectedSeries = new Set<string>()
+    
     for (const rejected of sessionLearning.rejectedCharacters) {
       const traitSummary = rejected.traitsWhenGuessed
         .map(t => `${t.key}=${t.value}`)
         .join(', ')
       learningLines.push(`  ❌ ${rejected.name} was guessed at turn ${rejected.turnRejected} with traits: ${traitSummary}`)
       learningLines.push(`     → ${rejected.name} does NOT match these traits! Avoid similar characters.`)
+      
+      if (rejected.series) {
+        rejectedSeries.add(rejected.series)
+      }
+    }
+    
+    // If we rejected a character from a specific series, STRONGLY suggest asking about the series
+    if (rejectedSeries.size > 0) {
+      learningLines.push('')
+      learningLines.push('🚨 CRITICAL SERIES FOLLOW-UP REQUIRED! 🚨')
+      for (const series of rejectedSeries) {
+        learningLines.push(`  ⚠️ You guessed a character from "${series}" but it was WRONG!`)
+        learningLines.push(`  ➤ NEXT QUESTION MUST ASK: "Is your character from the ${series} series?"`)
+        learningLines.push(`     This determines if we stay in ${series} or explore other series.`)
+      }
+      learningLines.push('')
+      learningLines.push('DO NOT ASK GENERIC QUESTIONS UNTIL YOU ASK ABOUT THE SERIES!')
     }
     
     parts.push(learningLines.join('\n'))
@@ -1086,7 +1857,7 @@ async function askNextQuestion(
     parts.push(`Rejected guesses (never guess these): ${rejectedGuesses.join(', ')}`)
   }
 
-  parts.push(`Turn: ${turns.length + 1}. Ask ONE NEW yes/no question exploring a completely different topic. Return JSON only, no explanation.`)
+  parts.push(`Turn: ${turns.length + 1}. Ask ONE NEW yes/no question exploring a completely different topic. IMPORTANT: Include top_guesses array with 1-3 character names if you have 3+ confirmed traits! Return JSON only, no explanation.`)
 
   console.info('[Detective] Sending FULL context to AI - traits:', traits.length, ', questions:', prevQuestions.length, ', rejected guesses:', rejectedGuesses.length)
 
@@ -1153,7 +1924,7 @@ async function askNextQuestion(
   let topGuesses: Guess[] = []
   if (Array.isArray(json?.top_guesses)) {
     const candidates = (json.top_guesses as any[])
-      .filter(g => g.name && typeof g.confidence === 'number')
+      .filter(g => g && g.name && typeof g.confidence === 'number')
       .filter(g => !rejectedGuesses.some(r => r.toLowerCase() === String(g.name).toLowerCase()))
     
     // Validate each guess asynchronously (with web search if needed)
