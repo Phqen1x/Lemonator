@@ -266,15 +266,32 @@ export function getMostInformativeQuestion(
     { q: 'Is your character a superhero?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
     { q: 'Did your character originate in a comic book?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
     { q: 'Is your character from a video game?', test: (c: CharacterData) => c.category === 'video-games', fictionOnly: true },
+    { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: false },
     // Real person questions
     { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false },
     { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false },
     { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false },
     { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false },
-    { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: false },
     { q: 'Is your character a historical figure (died before 1950)?', test: (c: CharacterData) => {
       const facts = c.distinctive_facts.join(' ')
       return /\d{4}–\d{4}/.test(facts) && facts.includes('195') === false && facts.includes('196') === false
+    }, fictionOnly: false },
+    // Additional broad questions for better splitting
+    { q: 'Is your character American?', test: (c: CharacterData) => {
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('american') || facts.includes('united states') || facts.includes('u.s.')
+    }, fictionOnly: false },
+    { q: 'Is your character still alive today?', test: (c: CharacterData) => {
+      const facts = c.distinctive_facts.join(' ')
+      return !facts.includes('–') && !facts.includes('died')
+    }, fictionOnly: false },
+    { q: 'Is your character known primarily for comedy?', test: (c: CharacterData) => {
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('comedy') || facts.includes('comedian') || facts.includes('comic')
+    }, fictionOnly: false },
+    { q: 'Is your character known for action or physical roles?', test: (c: CharacterData) => {
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('action') || facts.includes('martial arts') || facts.includes('fighter')
     }, fictionOnly: false },
   ]
   

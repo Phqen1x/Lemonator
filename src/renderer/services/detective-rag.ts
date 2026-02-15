@@ -599,12 +599,21 @@ async function askNextQuestion(
     traits  // Pass traits for logical inference
   )
 
-  if (strategicQuestion && remainingCandidates.length > 5) {
+  if (strategicQuestion && remainingCandidates.length > 15) {
     console.info('[Detective-RAG] Using strategic question from RAG:', strategicQuestion)
     
     return {
       question: strategicQuestion,
       topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
+    }
+  }
+  
+  // If we have ≤15 candidates and plenty of questions asked, just make guesses
+  if (remainingCandidates.length <= 15 && turns.length >= 8) {
+    console.info('[Detective-RAG] Small candidate pool (≤15), making direct guesses')
+    return {
+      question: 'Based on your answers, I think your character is one of these. Am I close?',
+      topGuesses: ragGuesses.slice(0, 5).map(g => ({ name: g.name, confidence: g.confidence }))
     }
   }
 
@@ -625,11 +634,13 @@ ${turnsList || '(no questions yet)'}
 ${candidateContext}
 
 **Your Task:**
-${remainingCandidates.length <= 2 
-  ? 'Very few candidates remain! Ask a final distinguishing question or make your guess.'
-  : remainingCandidates.length <= 10
-    ? 'Getting close! Ask a specific question about achievements, works, or distinctive features.'
-    : 'Many candidates remain. Ask a high-information question that eliminates ~50% of candidates.'}
+${remainingCandidates.length <= 5 
+  ? 'Very few candidates remain! Ask a final broad yes/no question.'
+  : remainingCandidates.length <= 25
+    ? 'Getting close! Ask a BROAD yes/no question about general traits (not specific achievements). Examples: "Is your character known for action roles?" or "Is your character American?"'
+    : 'Many candidates remain. Ask a high-information yes/no question that splits candidates roughly 50/50. Keep it general.'}
+
+IMPORTANT: Keep questions broad and answerable with yes/no. Avoid overly specific questions about dates, awards, or achievements.
 
 Return your response as JSON.`
 
