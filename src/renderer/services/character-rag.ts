@@ -88,9 +88,14 @@ export function getCharacterByName(name: string): CharacterData | null {
 export function filterCharactersByTraits(traits: Trait[]): CharacterData[] {
   const allChars = getAllCharacters()
   
-  if (traits.length === 0) return allChars
+  console.info('[RAG] Filtering characters with traits:', traits)
   
-  return allChars.filter(char => {
+  if (traits.length === 0) {
+    console.info('[RAG] No traits yet, returning all', allChars.length, 'characters')
+    return allChars
+  }
+  
+  const filtered = allChars.filter(char => {
     // Check each confirmed trait
     for (const trait of traits) {
       if (!characterMatchesTrait(char, trait)) {
@@ -99,6 +104,9 @@ export function filterCharactersByTraits(traits: Trait[]): CharacterData[] {
     }
     return true
   })
+  
+  console.info(`[RAG] Filtered from ${allChars.length} to ${filtered.length} characters`)
+  return filtered
 }
 
 /**
@@ -111,12 +119,20 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
   // fictional trait
   if (key === 'fictional') {
     const isFictional = lowerValue === 'true' || lowerValue === 'yes'
-    return char.traits.fictional === isFictional
+    const matches = char.traits.fictional === isFictional
+    if (!matches) {
+      console.log(`[RAG] ${char.name} REJECTED: fictional mismatch (has: ${char.traits.fictional}, need: ${isFictional})`)
+    }
+    return matches
   }
   
   // category-based traits
   if (key === 'category' || key === 'occupation_category') {
-    return char.category.toLowerCase().includes(lowerValue)
+    const matches = char.category.toLowerCase().includes(lowerValue)
+    if (!matches) {
+      console.log(`[RAG] ${char.name} REJECTED: category mismatch (has: ${char.category}, need: ${lowerValue})`)
+    }
+    return matches
   }
   
   // gender (infer from distinctive facts or name)

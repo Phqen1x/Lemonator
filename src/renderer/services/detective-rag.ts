@@ -200,6 +200,10 @@ async function askNextQuestion(
 ): Promise<{ question: string; topGuesses: Guess[] }> {
   await ensureKnowledgeLoaded()
 
+  console.info('[Detective-RAG] ===== ASK NEXT QUESTION =====')
+  console.info('[Detective-RAG] Confirmed traits:', traits.length, traits)
+  console.info('[Detective-RAG] Turn:', turns.length + 1)
+
   // Use RAG to filter candidates based on confirmed traits
   const remainingCandidates = filterCharactersByTraits(traits)
   console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match confirmed traits`)
@@ -332,23 +336,36 @@ export async function askDetective(
 }> {
   await ensureKnowledgeLoaded()
 
+  console.info('[Detective-RAG] ===== NEW TURN =====')
+  console.info('[Detective-RAG] Turn number:', turnAdded)
+  console.info('[Detective-RAG] Incoming traits:', traits.length, traits)
+  console.info('[Detective-RAG] Previous question:', previousQuestion)
+  console.info('[Detective-RAG] Answer:', answer)
+
   const newTraits: (Trait & TurnAdded)[] = []
 
   // Step 1: Extract trait from previous answer (if any)
   if (previousQuestion && answer) {
+    console.info('[Detective-RAG] Extracting trait from Q&A...')
     const extractedTrait = await extractTrait(previousQuestion, answer, turnAdded)
     if (extractedTrait) {
       newTraits.push({ ...extractedTrait, turnAdded })
-      console.info('[Detective-RAG] Extracted trait:', extractedTrait.key, '=', extractedTrait.value)
+      console.info('[Detective-RAG] ✓ Extracted trait:', extractedTrait.key, '=', extractedTrait.value, `(confidence: ${Math.round(extractedTrait.confidence * 100)}%)`)
+    } else {
+      console.warn('[Detective-RAG] ✗ No trait extracted from answer')
     }
   }
 
   // Step 2: Get next question with updated traits
   const updatedTraits = [...traits, ...newTraits]
+  console.info('[Detective-RAG] Updated traits for filtering:', updatedTraits.length, updatedTraits)
+  
   const { question, topGuesses } = await askNextQuestion(updatedTraits, turns, rejectedGuesses)
 
+  console.info('[Detective-RAG] ===== RESULTS =====')
   console.info('[Detective-RAG] Next question:', question)
-  console.info('[Detective-RAG] Top guesses:', topGuesses)
+  console.info('[Detective-RAG] New traits to return:', newTraits.length, newTraits)
+  console.info('[Detective-RAG] Top guesses to return:', topGuesses.length, topGuesses)
 
   return { question, newTraits, topGuesses }
 }
