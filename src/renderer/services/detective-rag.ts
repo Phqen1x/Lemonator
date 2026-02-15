@@ -262,20 +262,55 @@ async function askNextQuestion(
       console.info(`[Detective-RAG] Relaxed filtering: ${relaxedCandidates.length} candidates with ${relaxedTraits.length} traits`)
       
       if (relaxedCandidates.length > 0) {
-        // Continue with relaxed filtering
-        const relaxedGuesses = getRagTopGuesses(relaxedTraits, 3)
+        // Continue with relaxed filtering - try to narrow down further
+        const relaxedGuesses = getRagTopGuesses(relaxedTraits, 5)
         console.info('[Detective-RAG] Using relaxed filtering to continue game')
+        console.info('[Detective-RAG] Top guesses with relaxed traits:', relaxedGuesses.map(g => g.name))
         
+        // If we have very few candidates, just make guesses
+        if (relaxedCandidates.length <= 10) {
+          console.info('[Detective-RAG] Few candidates remaining, making direct guesses')
+          return {
+            question: 'Is your character one of these?',
+            topGuesses: relaxedGuesses.slice(0, 3).map(g => ({ 
+              name: g.name, 
+              confidence: g.confidence * 0.6  // Reduced confidence due to relaxed filtering
+            }))
+          }
+        }
+        
+        // Otherwise, try to ask a strategic question to narrow down
+        const strategicQuestion = getMostInformativeQuestion(
+          relaxedCandidates,
+          turns.map(t => t.question)
+        )
+        
+        if (strategicQuestion) {
+          console.info('[Detective-RAG] Asking strategic question with relaxed candidates')
+          return {
+            question: strategicQuestion,
+            topGuesses: relaxedGuesses.slice(0, 3).map(g => ({ 
+              name: g.name, 
+              confidence: g.confidence * 0.6 
+            }))
+          }
+        }
+        
+        // Fallback: make guesses
         return {
-          question: 'Your character might not be in my database yet. Let me try to guess based on what I know so far. Can you tell me more specific details?',
-          topGuesses: relaxedGuesses.map(g => ({ name: g.name, confidence: g.confidence * 0.5 }))
+          question: 'Is your character one of these?',
+          topGuesses: relaxedGuesses.slice(0, 3).map(g => ({ 
+            name: g.name, 
+            confidence: g.confidence * 0.6 
+          }))
         }
       }
     }
     
     // If still 0, admit we don't have this character
+    // Present a "give up" scenario where user can see we tried
     return {
-      question: `I don't have a character matching "${traitSummary}" in my database yet. This is a limitation of my current knowledge base (${getAllCharacters().length} characters). Would you like to tell me who it was so I can learn?`,
+      question: `I couldn't find anyone matching all your answers. My database is limited to ${getAllCharacters().length} characters. Your character might not be included yet. Would you like to start a new game?`,
       topGuesses: []
     }
   }
