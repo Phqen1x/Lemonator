@@ -19,11 +19,23 @@ const initialState: GameState = {
 function mergeTraits(existing: Trait[], incoming: Trait[]): Trait[] {
   const merged = [...existing]
   for (const trait of incoming) {
-    const idx = merged.findIndex(t => t.key === trait.key)
-    if (idx >= 0) {
-      merged[idx] = trait
+    // For category and origin_medium traits, we need to accumulate multiple values
+    // (e.g., "actors", "NOT_musicians", "NOT_anime", "NOT_video-game")
+    // For other traits (like gender, fictional), we overwrite since they're single-valued
+    if (trait.key === 'category' || trait.key === 'origin_medium') {
+      // Check if this exact key+value combination already exists
+      const exists = merged.some(t => t.key === trait.key && t.value === trait.value)
+      if (!exists) {
+        merged.push(trait)  // Accumulate multi-value traits
+      }
     } else {
-      merged.push(trait)
+      // For single-value traits, overwrite existing trait with same key
+      const idx = merged.findIndex(t => t.key === trait.key)
+      if (idx >= 0) {
+        merged[idx] = trait
+      } else {
+        merged.push(trait)
+      }
     }
   }
   return merged

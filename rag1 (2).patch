@@ -1,0 +1,179 @@
+diff --git a/src/renderer/context/GameContext.tsx b/src/renderer/context/GameContext.tsx
+index 69a547a..f92c90d 100644
+--- a/src/renderer/context/GameContext.tsx
++++ b/src/renderer/context/GameContext.tsx
+@@ -19,11 +19,23 @@ const initialState: GameState = {
+ function mergeTraits(existing: Trait[], incoming: Trait[]): Trait[] {
+   const merged = [...existing]
+   for (const trait of incoming) {
+-    const idx = merged.findIndex(t => t.key === trait.key)
+-    if (idx >= 0) {
+-      merged[idx] = trait
++    // For category and origin_medium traits, we need to accumulate multiple values
++    // (e.g., "actors", "NOT_musicians", "NOT_anime", "NOT_video-game")
++    // For other traits (like gender, fictional), we overwrite since they're single-valued
++    if (trait.key === 'category' || trait.key === 'origin_medium') {
++      // Check if this exact key+value combination already exists
++      const exists = merged.some(t => t.key === trait.key && t.value === trait.value)
++      if (!exists) {
++        merged.push(trait)  // Accumulate multi-value traits
++      }
+     } else {
+-      merged.push(trait)
++      // For single-value traits, overwrite existing trait with same key
++      const idx = merged.findIndex(t => t.key === trait.key)
++      if (idx >= 0) {
++        merged[idx] = trait
++      } else {
++        merged.push(trait)
++      }
+     }
+   }
+   return merged
+diff --git a/src/renderer/hooks/useGameLoop.ts b/src/renderer/hooks/useGameLoop.ts
+index c6670ba..d5ac598 100644
+--- a/src/renderer/hooks/useGameLoop.ts
++++ b/src/renderer/hooks/useGameLoop.ts
+@@ -113,8 +113,16 @@ export function useGameLoop() {
+         : s.rejectedGuesses
+       try {
+         const turnHistory = s.turns.map(t => ({ question: t.question, answer: t.answer }))
++
++        // Extract the most recent Q&A for trait extraction
++        const lastTurn = s.turns[s.turns.length - 1]
++        const previousQuestion = lastTurn?.question
++        const previousAnswer = lastTurn?.answer
++
+         const { question, newTraits, topGuesses } = await askDetective(
+           s.traits, turnHistory, s.turn + 1, rejected,
++          previousQuestion,
++          previousAnswer
+         )
+         dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+       } catch (e) {
+diff --git a/src/renderer/services/character-rag.ts b/src/renderer/services/character-rag.ts
+index 5bf0baa..3e22bc5 100644
+--- a/src/renderer/services/character-rag.ts
++++ b/src/renderer/services/character-rag.ts
+@@ -144,32 +144,43 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
+   if (key === 'gender') {
+     const facts = char.distinctive_facts.join(' ').toLowerCase()
+     const name = char.name.toLowerCase()
+-    
++
+     if (lowerValue === 'male') {
+-      // Male indicators
+-      return facts.includes('he ') || facts.includes('his ') || 
+-             facts.includes('actor') || facts.includes('businessman') ||
+-             facts.includes('(born 1') || facts.includes('(1')
++      // Male indicators - check for 'actor' but NOT 'actress' to avoid substring match
++      return facts.includes('he ') || facts.includes('his ') ||
++             (facts.includes('actor') && !facts.includes('actress')) ||
++             facts.includes('businessman')
+     } else if (lowerValue === 'female') {
+       // Female indicators
+       return facts.includes('she ') || facts.includes('her ') ||
+              facts.includes('actress') || facts.includes('businesswoman')
+     }
++
++    // If no clear gender indicators found, return false (don't match)
++    return false
+   }
+   
+   // origin_medium (anime, movie, tv, game, comic)
+   if (key === 'origin_medium') {
+-    if (lowerValue === 'anime' || lowerValue === 'manga') {
+-      return char.category === 'anime'
+-    } else if (lowerValue === 'movie' || lowerValue === 'film') {
+-      return char.category === 'actors' || char.distinctive_facts.some(f => f.toLowerCase().includes('movie') || f.toLowerCase().includes('film'))
+-    } else if (lowerValue === 'tv' || lowerValue === 'television') {
+-      return char.category === 'tv-characters' || char.distinctive_facts.some(f => f.toLowerCase().includes('television') || f.toLowerCase().includes('tv show'))
+-    } else if (lowerValue === 'video game' || lowerValue === 'game') {
+-      return char.category === 'video-games' || char.distinctive_facts.some(f => f.toLowerCase().includes('video game'))
+-    } else if (lowerValue === 'comic book' || lowerValue === 'comic') {
+-      return char.category === 'superheroes' || char.distinctive_facts.some(f => f.toLowerCase().includes('comic'))
++    let mediumMatches = false
++
++    if (actualValue === 'anime' || actualValue === 'manga') {
++      mediumMatches = char.category === 'anime'
++    } else if (actualValue === 'movie' || actualValue === 'film') {
++      mediumMatches = char.category === 'actors' || char.distinctive_facts.some(f => f.toLowerCase().includes('movie') || f.toLowerCase().includes('film'))
++    } else if (actualValue === 'tv' || actualValue === 'television') {
++      mediumMatches = char.category === 'tv-characters' || char.distinctive_facts.some(f => f.toLowerCase().includes('television') || f.toLowerCase().includes('tv show'))
++    } else if (actualValue === 'video game' || actualValue === 'game') {
++      mediumMatches = char.category === 'video-games' || char.distinctive_facts.some(f => f.toLowerCase().includes('video game'))
++    } else if (actualValue === 'comic book' || actualValue === 'comic') {
++      mediumMatches = char.category === 'superheroes' || char.distinctive_facts.some(f => f.toLowerCase().includes('comic'))
+     }
++
++    const matches = isNegative ? !mediumMatches : mediumMatches
++    if (!matches) {
++      console.log(`[RAG] ${char.name} REJECTED: origin_medium mismatch (${isNegative ? 'NOT ' : ''}${actualValue})`)
++    }
++    return matches
+   }
+   
+   // has_powers
+diff --git a/src/renderer/services/detective-rag.ts b/src/renderer/services/detective-rag.ts
+index c0bda80..75ab930 100644
+--- a/src/renderer/services/detective-rag.ts
++++ b/src/renderer/services/detective-rag.ts
+@@ -140,11 +140,19 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
+    Example: "Is male?" + "probably" → {"key": "gender", "value": "male", "confidence": 0.75}
+ 
+ 4. Match question topic PRECISELY - extract ONLY what the question asks about
+-   - Question about actors? → Extract category trait
+-   - Question about fictional? → Extract fictional trait  
++   - Question about actors? → Extract category trait with value "actors" or "NOT_actors"
++   - Question about athletes? → Extract category trait with value "athletes" or "NOT_athletes"
++   - Question about musicians? → Extract category trait with value "musicians" or "NOT_musicians"
++   - Question about fictional? → Extract fictional trait
+    - Question about powers? → Extract has_powers trait
+    - DON'T infer unrelated traits!
+ 
++5. **CRITICAL: The trait VALUE must match a word from the QUESTION**
++   - If question says "athlete", value MUST be "athletes" or "NOT_athletes"
++   - If question says "actor", value MUST be "actors" or "NOT_actors"
++   - NEVER extract "actors" when question asks about "athletes"!
++   - NEVER extract "musicians" when question asks about "politicians"!
++
+ 5. IMPORTANT: Characters can have overlapping traits
+    - A character like "Iron Man" could be:
+      * fictional=true (Tony Stark is a made-up character)
+@@ -157,7 +165,11 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
+ 6. Return null if question doesn't clearly map to any available trait
+ 
+ **EXAMPLES:**
++Q: "Is your character an actor?" A: "Yes" → {"key": "category", "value": "actors", "confidence": 0.95}
+ Q: "Is your character an actor?" A: "No" → {"key": "category", "value": "NOT_actors", "confidence": 0.9}
++Q: "Is your character an athlete?" A: "Yes" → {"key": "category", "value": "athletes", "confidence": 0.95}
++Q: "Is your character an athlete?" A: "No" → {"key": "category", "value": "NOT_athletes", "confidence": 0.9}
++Q: "Is your character a musician or singer?" A: "No" → {"key": "category", "value": "NOT_musicians", "confidence": 0.9}
+ Q: "Is your character fictional?" A: "Yes" → {"key": "fictional", "value": "true", "confidence": 0.95}
+ Q: "Is your character male?" A: "Probably" → {"key": "gender", "value": "male", "confidence": 0.75}
+ Q: "Does your character have superpowers?" A: "Yes" → {"key": "has_powers", "value": "true", "confidence": 0.95}
+@@ -209,6 +221,24 @@ Extract the trait.`
+       return null
+     }
+ 
++    // CRITICAL: Validate that extracted value is related to the question
++    // This prevents hallucinations like extracting "actors" when question is about "athletes"
++    if (String(json.key) === 'category') {
++      const questionLower = question.toLowerCase()
++      const extractedValue = value.replace(/^not_/, '') // Strip NOT_ prefix for validation
++
++      // Check if the extracted category appears in or is closely related to the question
++      const isRelated =
++        questionLower.includes(extractedValue) || // Direct match (e.g., "actor" in question, "actors" extracted)
++        questionLower.includes(extractedValue.replace(/s$/, '')) || // Singular form
++        extractedValue.includes(questionLower.match(/(?:actor|athlete|musician|politician|historical)/)?.[0] || '') // Key category word
++
++      if (!isRelated) {
++        console.warn(`[Detective-RAG] FAILED extraction - category "${extractedValue}" not related to question: "${question}"`)
++        return null
++      }
++    }
++
+     const trait = {
+       key: String(json.key),
+       value: String(json.value),

@@ -404,7 +404,8 @@ async function askNextQuestion(
         // Otherwise, try to ask a strategic question to narrow down
         const strategicQuestion = getMostInformativeQuestion(
           relaxedCandidates,
-          turns.map(t => t.question)
+          turns.map(t => t.question),
+          traits  // Pass traits for logical inference
         )
         
         if (strategicQuestion) {
@@ -498,15 +499,61 @@ async function askNextQuestion(
         }
       }
       
-      // If STILL no questions and under 30 turns, just ask a very generic one
-      console.info('[Detective-RAG] All questions exhausted. Asking very generic question.')
-      return {
-        question: 'Is there anything else distinctive or notable about your character?',
-        topGuesses: []
+      // If STILL no questions and under 30 turns, generate dynamic questions based on existing traits
+      console.info('[Detective-RAG] All questions exhausted. Generating dynamic question based on traits.')
+      
+      // Generate more specific follow-up questions based on confirmed traits
+      const dynamicQuestions: string[] = []
+      
+      // Add trait-based dynamic questions
+      const hasFictional = traits.some(t => t.key === 'fictional')
+      const isNotFictional = traits.some(t => t.key === 'fictional' && t.value === 'false')
+      const hasMale = traits.some(t => t.key === 'gender' && t.value === 'male')
+      const hasFemale = traits.some(t => t.key === 'gender' && t.value === 'female')
+      
+      if (!hasFictional) {
+        dynamicQuestions.push('Is your character entirely fictional or based on a real person?')
       }
+      
+      if (hasFictional && !isNotFictional) {
+        dynamicQuestions.push('Does your character appear in multiple different works or adaptations?')
+        dynamicQuestions.push('Is your character the main protagonist of their story?')
+        dynamicQuestions.push('Does your character have a romantic relationship in their story?')
+      }
+      
+      if (hasMale || hasFemale) {
+        dynamicQuestions.push('Does your character have a title or honorific (Dr., Mr., Sir, etc.)?')
+        dynamicQuestions.push('Is your character known for their sense of humor?')
+      }
+      
+      // Generic fallbacks if no dynamic questions apply
+      if (dynamicQuestions.length === 0) {
+        dynamicQuestions.push(
+          'Does your character have a mentor or guide figure?',
+          'Is your character associated with any specific location or place?',
+          'Does your character undergo significant character development or change?',
+          'Is your character known for any catchphrase or memorable line?',
+          'Does your character have a rival or arch-enemy?'
+        )
+      }
+      
+      const nextDynamicQuestion = dynamicQuestions.find(q =>
+        !askedQuestions.some(asked => asked.includes(q.toLowerCase().slice(0, 20)))
+      )
+      
+      if (nextDynamicQuestion) {
+        console.info('[Detective-RAG] Asking dynamic question:', nextDynamicQuestion)
+        return {
+          question: nextDynamicQuestion,
+          topGuesses: []
+        }
+      }
+      
+      // Absolute last resort - we've truly exhausted everything
+      console.warn('[Detective-RAG] No more questions available, moving to LLM guessing early')
     }
     
-    // If still 0 and asked 30+ questions, NOW use LLM to make educated guesses
+    // If still 0 and asked 30+ questions (or exhausted all questions), NOW use LLM to make educated guesses
     console.warn('[Detective-RAG] Character not in database - using LLM to make guesses')
     console.warn('[Detective-RAG] Traits:', traitSummary)
     
@@ -548,7 +595,8 @@ async function askNextQuestion(
   // Check if we should use a strategic question based on information theory
   const strategicQuestion = getMostInformativeQuestion(
     remainingCandidates,
-    turns.map(t => t.question)
+    turns.map(t => t.question),
+    traits  // Pass traits for logical inference
   )
 
   if (strategicQuestion && remainingCandidates.length > 5) {

@@ -146,30 +146,41 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     const name = char.name.toLowerCase()
     
     if (lowerValue === 'male') {
-      // Male indicators
-      return facts.includes('he ') || facts.includes('his ') || 
-             facts.includes('actor') || facts.includes('businessman') ||
-             facts.includes('(born 1') || facts.includes('(1')
+      // Male indicators - check for 'actor' but NOT 'actress' to avoid substring match
+      return facts.includes('he ') || facts.includes('his ') ||
+             (facts.includes('actor') && !facts.includes('actress')) ||
+             facts.includes('businessman')
     } else if (lowerValue === 'female') {
       // Female indicators
       return facts.includes('she ') || facts.includes('her ') ||
              facts.includes('actress') || facts.includes('businesswoman')
     }
+
+    // If no clear gender indicators found, return false (don't match)
+    return false
   }
   
   // origin_medium (anime, movie, tv, game, comic)
   if (key === 'origin_medium') {
-    if (lowerValue === 'anime' || lowerValue === 'manga') {
-      return char.category === 'anime'
-    } else if (lowerValue === 'movie' || lowerValue === 'film') {
-      return char.category === 'actors' || char.distinctive_facts.some(f => f.toLowerCase().includes('movie') || f.toLowerCase().includes('film'))
-    } else if (lowerValue === 'tv' || lowerValue === 'television') {
-      return char.category === 'tv-characters' || char.distinctive_facts.some(f => f.toLowerCase().includes('television') || f.toLowerCase().includes('tv show'))
-    } else if (lowerValue === 'video game' || lowerValue === 'game') {
-      return char.category === 'video-games' || char.distinctive_facts.some(f => f.toLowerCase().includes('video game'))
-    } else if (lowerValue === 'comic book' || lowerValue === 'comic') {
-      return char.category === 'superheroes' || char.distinctive_facts.some(f => f.toLowerCase().includes('comic'))
+    let mediumMatches = false
+
+    if (actualValue === 'anime' || actualValue === 'manga') {
+      mediumMatches = char.category === 'anime'
+    } else if (actualValue === 'movie' || actualValue === 'film') {
+      mediumMatches = char.category === 'actors' || char.distinctive_facts.some(f => f.toLowerCase().includes('movie') || f.toLowerCase().includes('film'))
+    } else if (actualValue === 'tv' || actualValue === 'television') {
+      mediumMatches = char.category === 'tv-characters' || char.distinctive_facts.some(f => f.toLowerCase().includes('television') || f.toLowerCase().includes('tv show'))
+    } else if (actualValue === 'video game' || actualValue === 'game') {
+      mediumMatches = char.category === 'video-games' || char.distinctive_facts.some(f => f.toLowerCase().includes('video game'))
+    } else if (actualValue === 'comic book' || actualValue === 'comic') {
+      mediumMatches = char.category === 'superheroes' || char.distinctive_facts.some(f => f.toLowerCase().includes('comic'))
     }
+
+    const matches = isNegative ? !mediumMatches : mediumMatches
+    if (!matches) {
+      console.log(`[RAG] ${char.name} REJECTED: origin_medium mismatch (${isNegative ? 'NOT ' : ''}${actualValue})`)
+    }
+    return matches
   }
   
   // has_powers
@@ -234,35 +245,50 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
 /**
  * Get the most distinctive questions to ask based on remaining candidates
  * Uses information theory to find questions that split candidates ~50/50
+ * Also applies logical inference to skip irrelevant questions
  */
 export function getMostInformativeQuestion(
   remainingCandidates: CharacterData[],
-  askedQuestions: string[]
+  askedQuestions: string[],
+  confirmedTraits: Trait[] = []
 ): string | null {
   if (remainingCandidates.length === 0) return null
   if (remainingCandidates.length === 1) return null // Ready to guess
   
+  // Check if character is confirmed as non-fictional
+  const isNotFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'false')
+  
   const questions = [
-    { q: 'Is your character fictional?', test: (c: CharacterData) => c.traits.fictional },
-    { q: 'Is your character male?', test: (c: CharacterData) => inferGender(c) === 'male' },
-    { q: 'Did your character originate in an anime or manga?', test: (c: CharacterData) => c.category === 'anime' },
-    { q: 'Is your character a superhero?', test: (c: CharacterData) => c.category === 'superheroes' },
-    { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes' },
-    { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians' },
-    { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians' },
-    { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors' },
-    { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters' },
+    { q: 'Is your character fictional?', test: (c: CharacterData) => c.traits.fictional, fictionOnly: false },
+    { q: 'Is your character male?', test: (c: CharacterData) => inferGender(c) === 'male', fictionOnly: false },
+    // Fiction-only questions (skip if character is confirmed as non-fictional)
+    { q: 'Did your character originate in an anime or manga?', test: (c: CharacterData) => c.category === 'anime', fictionOnly: true },
+    { q: 'Is your character a superhero?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
+    { q: 'Did your character originate in a comic book?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
+    { q: 'Is your character from a video game?', test: (c: CharacterData) => c.category === 'video-games', fictionOnly: true },
+    // Real person questions
+    { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false },
+    { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false },
+    { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false },
+    { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false },
+    { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: false },
     { q: 'Is your character a historical figure (died before 1950)?', test: (c: CharacterData) => {
       const facts = c.distinctive_facts.join(' ')
       return /\d{4}–\d{4}/.test(facts) && facts.includes('195') === false && facts.includes('196') === false
-    }},
+    }, fictionOnly: false },
   ]
   
   // Find question that splits candidates closest to 50/50
   let bestQuestion: string | null = null
   let bestScore = Infinity
   
-  for (const {q, test} of questions) {
+  for (const {q, test, fictionOnly} of questions) {
+    // Skip fiction-only questions if character is confirmed as non-fictional
+    if (fictionOnly && isNotFictional) {
+      console.info(`[RAG] Skipping fiction-only question due to logical inference: "${q}"`)
+      continue
+    }
+    
     // Skip if already asked
     if (askedQuestions.some(aq => aq.toLowerCase() === q.toLowerCase())) continue
     
