@@ -1,0 +1,797 @@
+{
+  "timestamp": "2026-02-15T23:20:40.866Z",
+  "options": {
+    "numGames": 5,
+    "maxTurns": 25
+  },
+  "metrics": {
+    "totalGames": 5,
+    "successRate": 0,
+    "averageTurns": 25,
+    "guessDistribution": {
+      "firstGuess": 0,
+      "secondGuess": 0,
+      "thirdGuess": 0,
+      "notInTop3": 5
+    },
+    "categoryPerformance": {
+      "historical": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "musicians": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "actors": {
+        "games": 2,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "superheroes": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      }
+    },
+    "hardestCharacters": [
+      {
+        "name": "Carl Jung",
+        "turns": 25
+      },
+      {
+        "name": "Marvin Gaye",
+        "turns": 25
+      },
+      {
+        "name": "Nicole Kidman",
+        "turns": 25
+      },
+      {
+        "name": "Vision",
+        "turns": 25
+      },
+      {
+        "name": "Scarlett Johansson",
+        "turns": 25
+      }
+    ]
+  },
+  "results": [
+    {
+      "characterName": "Carl Jung",
+      "category": "historical",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 11
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 13
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no"
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no"
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Marvin Gaye",
+      "category": "musicians",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "musicians",
+          "confidence": 0.95,
+          "turnAdded": 11
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "yes"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Nicole Kidman",
+      "category": "actors",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "NOT_male",
+          "confidence": 0.9,
+          "turnAdded": 4
+        },
+        {
+          "key": "era",
+          "value": "NOT_ancient",
+          "confidence": 0.8,
+          "turnAdded": 11
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 17
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known internationally?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character known internationally?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive (or active in recent stories)?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive (or active in recent stories)?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character primarily known for their physical appearance?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character primarily known for their physical appearance?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character associated with a specific time period in history?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character associated with a specific time period in history?",
+          "answer": "no"
+        },
+        {
+          "question": "Does your character have a distinctive personality trait?",
+          "answer": "probably"
+        },
+        {
+          "question": "Does your character have a distinctive personality trait?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character part of a famous duo or group?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character part of a famous duo or group?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character based on a real person?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character based on a real person?",
+          "answer": "yes"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Vision",
+      "category": "superheroes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.95,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 11
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 13
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no"
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no"
+        },
+        {
+          "question": "Was your character a U.S. President?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a basketball player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character a soccer/football player?",
+          "answer": "no"
+        }
+      ]
+    },
+    {
+      "characterName": "Scarlett Johansson",
+      "category": "actors",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "NOT_male",
+          "confidence": 0.9,
+          "turnAdded": 4
+        },
+        {
+          "key": "era",
+          "value": "NOT_ancient",
+          "confidence": 0.8,
+          "turnAdded": 11
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 17
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character known internationally?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character known internationally?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive (or active in recent stories)?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character still alive (or active in recent stories)?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character primarily known for their physical appearance?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character primarily known for their physical appearance?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character associated with a specific time period in history?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character associated with a specific time period in history?",
+          "answer": "no"
+        },
+        {
+          "question": "Does your character have a distinctive personality trait?",
+          "answer": "probably"
+        },
+        {
+          "question": "Does your character have a distinctive personality trait?",
+          "answer": "probably"
+        },
+        {
+          "question": "Is your character part of a famous duo or group?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character part of a famous duo or group?",
+          "answer": "no"
+        },
+        {
+          "question": "Is your character based on a real person?",
+          "answer": "yes"
+        },
+        {
+          "question": "Is your character based on a real person?",
+          "answer": "yes"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "no"
+        }
+      ]
+    }
+  ]
+}

@@ -135,6 +135,12 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 
 2. For "NO" answers: Use "NOT_" prefix to indicate EXCLUSION
    Example: "Is actor?" + "no" → {"key": "category", "value": "NOT_actors", "confidence": 0.9}
+   
+   **EXCEPTION: Binary traits with clear opposites:**
+   - "Is male?" + "no" → {"key": "gender", "value": "female", "confidence": 0.9}
+   - "Is female?" + "no" → {"key": "gender", "value": "male", "confidence": 0.9}
+   - "Is fictional?" + "no" → {"key": "fictional", "value": "false", "confidence": 0.95}
+   - "Is real?" + "no" → {"key": "fictional", "value": "true", "confidence": 0.95}
 
 3. For "PROBABLY" answers: Extract with lower confidence (0.7-0.8)
    Example: "Is male?" + "probably" → {"key": "gender", "value": "male", "confidence": 0.75}
@@ -171,6 +177,9 @@ Q: "Is your character an athlete?" A: "Yes" → {"key": "category", "value": "at
 Q: "Is your character an athlete?" A: "No" → {"key": "category", "value": "NOT_athletes", "confidence": 0.9}
 Q: "Is your character a musician or singer?" A: "No" → {"key": "category", "value": "NOT_musicians", "confidence": 0.9}
 Q: "Is your character fictional?" A: "Yes" → {"key": "fictional", "value": "true", "confidence": 0.95}
+Q: "Is your character fictional?" A: "No" → {"key": "fictional", "value": "false", "confidence": 0.95}
+Q: "Is your character male?" A: "Yes" → {"key": "gender", "value": "male", "confidence": 0.95}
+Q: "Is your character male?" A: "No" → {"key": "gender", "value": "female", "confidence": 0.9}
 Q: "Is your character male?" A: "Probably" → {"key": "gender", "value": "male", "confidence": 0.75}
 Q: "Does your character have superpowers?" A: "Yes" → {"key": "has_powers", "value": "true", "confidence": 0.95}
 Q: "Is your character known for football?" A: "No" → null (sport trait not available)`
