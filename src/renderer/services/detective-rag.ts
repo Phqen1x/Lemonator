@@ -679,12 +679,20 @@ async function askNextQuestion(
   // CRITICAL: Don't guess if we just rejected guesses recently
   // After rejection, ask at least 3-5 more questions before trying again
   const turnsSinceLastRejection = rejectedGuesses.length > 0 ? 
-    Math.max(...rejectedGuesses.map(r => turns.length - (turns.findIndex(t => t.question.includes('Am I close')) || 0))) : 999
+    Math.max(...rejectedGuesses.map(r => turns.length - (turns.findIndex(t => t.question.includes('Is your character')) || 0))) : 999
   const enoughTurnsSinceRejection = turnsSinceLastRejection >= 4 || rejectedGuesses.length === 0
   
-  if (remainingCandidates.length <= 10 && turns.length >= 12 && hasEnoughTraits && enoughTurnsSinceRejection) {
-    console.info('[Detective-RAG] Small candidate pool (≤10) with sufficient traits, making direct guess')
-    console.info(`[Detective-RAG] Traits: ${traits.length}, Has category: ${hasEnoughTraits}`)
+  // IMPROVED STRATEGY: Only make direct guesses when highly confident or down to very few candidates
+  // Otherwise, ask discriminating questions to narrow down similar candidates
+  const shouldMakeDirectGuess = (
+    remainingCandidates.length <= 2 ||  // Only 1-2 candidates left
+    (hybridGuesses[0]?.confidence >= 0.85 && remainingCandidates.length <= 5) ||  // Very high confidence with small pool
+    (turns.length >= 20 && remainingCandidates.length <= 5)  // Many questions asked, small pool
+  ) && hasEnoughTraits && enoughTurnsSinceRejection
+  
+  if (shouldMakeDirectGuess) {
+    console.info('[Detective-RAG] Making direct guess')
+    console.info(`[Detective-RAG] Candidates: ${remainingCandidates.length}, Confidence: ${Math.round((hybridGuesses[0]?.confidence || 0) * 100)}%`)
     
     // Make a single direct guess with the top candidate
     const topGuess = hybridGuesses[0]
@@ -695,6 +703,12 @@ async function askNextQuestion(
         topGuesses: [{ name: topGuess.name, confidence: topGuess.confidence }]
       }
     }
+  }
+  
+  // If we have 3-10 similar candidates, ask discriminating questions instead of guessing
+  if (remainingCandidates.length >= 3 && remainingCandidates.length <= 10) {
+    console.info(`[Detective-RAG] ${remainingCandidates.length} similar candidates - asking discriminating question instead of guessing`)
+    console.info('[Detective-RAG] Candidates:', remainingCandidates.map(c => c.name).slice(0, 10))
   }
   
   // If small pool but insufficient traits, keep asking strategic questions

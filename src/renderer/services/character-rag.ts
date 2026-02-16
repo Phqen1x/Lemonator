@@ -371,6 +371,25 @@ export function getMostInformativeQuestion(
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('president of the united states') || facts.includes('44th president') || facts.includes('45th president')
     }, fictionOnly: false },
+    { q: 'Was your character president in the 2000s or later?', test: (c: CharacterData) => {
+      if (c.category !== 'politicians') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('2000') || facts.includes('2010') || facts.includes('2020') || 
+             facts.includes('obama') || facts.includes('trump') || facts.includes('biden')
+    }, fictionOnly: false },
+    { q: 'Was your character president before 2000?', test: (c: CharacterData) => {
+      if (c.category !== 'politicians') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('198') || facts.includes('199') || facts.includes('197') ||
+             facts.includes('clinton') || facts.includes('reagan') || facts.includes('bush')
+    }, fictionOnly: false },
+    { q: 'Is your character currently in office (as of 2026)?', test: (c: CharacterData) => {
+      if (c.category !== 'politicians') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      const name = c.name.toLowerCase()
+      // Biden is current president in 2026
+      return name.includes('biden')
+    }, fictionOnly: false },
     
     // Athletes
     { q: 'Is your character a basketball player?', test: (c: CharacterData) => {
@@ -457,7 +476,57 @@ export function getMostInformativeQuestion(
       if (c.category !== 'musicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('band') || facts.includes('beatles') || facts.includes('led zeppelin')
-    }, fictionOnly: false }
+    }, fictionOnly: false },
+    { q: 'Is your character a rock musician?', test: (c: CharacterData) => {
+      if (c.category !== 'musicians') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('rock') || facts.includes('guitar') 
+    }, fictionOnly: false },
+    { q: 'Is your character a pop singer?', test: (c: CharacterData) => {
+      if (c.category !== 'musicians') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('pop') && !facts.includes('hip hop') && !facts.includes('rock')
+    }, fictionOnly: false },
+    { q: 'Was your character popular in the 1960s-1980s?', test: (c: CharacterData) => {
+      if (c.category !== 'musicians') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('196') || facts.includes('197') || facts.includes('198')
+    }, fictionOnly: false },
+    
+    // Actors
+    { q: 'Has your character won an Oscar?', test: (c: CharacterData) => {
+      if (c.category !== 'actors') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('oscar') || facts.includes('academy award')
+    }, fictionOnly: false },
+    { q: 'Is your character primarily known for action movies?', test: (c: CharacterData) => {
+      if (c.category !== 'actors') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('action') || facts.includes('martial arts')
+    }, fictionOnly: false },
+    { q: 'Was your character active in movies before 2000?', test: (c: CharacterData) => {
+      if (c.category !== 'actors') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('198') || facts.includes('199')
+    }, fictionOnly: false },
+    
+    // TV Characters  
+    { q: 'Is your character from a sitcom?', test: (c: CharacterData) => {
+      if (c.category !== 'tv-characters') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('sitcom') || facts.includes('friends') || facts.includes('seinfeld') || 
+             facts.includes('office') || facts.includes('big bang')
+    }, fictionOnly: true },
+    { q: 'Is your character from a drama series?', test: (c: CharacterData) => {
+      if (c.category !== 'tv-characters') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('drama') || facts.includes('breaking bad') || facts.includes('game of thrones')
+    }, fictionOnly: true },
+    { q: 'Is your character from an animated show?', test: (c: CharacterData) => {
+      if (c.category !== 'tv-characters') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('animated') || facts.includes('simpsons') || facts.includes('family guy')
+    }, fictionOnly: true }
   ]
   
   // Find question that splits candidates closest to 50/50
