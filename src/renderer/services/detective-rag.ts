@@ -739,12 +739,22 @@ ${candidateContext}
 
 **Your Task:**
 ${remainingCandidates.length <= 5 
-  ? 'Very few candidates remain! Ask a final broad yes/no question.'
+  ? 'Very few candidates remain! Ask ONE simple yes/no question about ONE trait.'
   : remainingCandidates.length <= 25
-    ? 'Getting close! Ask a BROAD yes/no question about general traits (not specific achievements). Examples: "Is your character known for action roles?" or "Is your character American?"'
-    : 'Many candidates remain. Ask a high-information yes/no question that splits candidates roughly 50/50. Keep it general.'}
+    ? 'Ask ONE simple yes/no question about a GENERAL trait. Examples: "Is your character American?" or "Does your character have superpowers?"'
+    : 'Ask ONE simple yes/no question that splits candidates roughly 50/50.'}
 
-IMPORTANT: Keep questions broad and answerable with yes/no. Avoid overly specific questions about dates, awards, or achievements.
+CRITICAL RULES:
+1. Questions MUST be under 15 words
+2. Ask about ONE trait only (NOT compound questions with "and" or "or")
+3. Keep it broad and simple - NO specific details about team members, abilities, etc.
+4. If stuck, try a DIFFERENT type of question (era, appearance, personality, origin)
+
+BAD: "Is your character part of a team that includes a member known for having a high level of agility?"
+GOOD: "Does your character work with a team?"
+
+BAD: "Is your character known for intelligence and strategic planning?"
+GOOD: "Is your character known for intelligence?"
 
 Return your response as JSON.`
 
@@ -771,8 +781,19 @@ Return your response as JSON.`
       }
     }
 
+    // Validate question length - reject overly long/complex questions
+    const questionText = String(json.question)
+    const wordCount = questionText.split(/\s+/).length
+    if (wordCount > 20) {
+      console.warn(`[Detective-RAG] Question too long (${wordCount} words), using fallback`)
+      return {
+        question: getFallbackQuestion(turns.map(t => t.question)),
+        topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
+      }
+    }
+
     return {
-      question: String(json.question),
+      question: questionText,
       topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
     }
   } catch (error) {
@@ -785,11 +806,15 @@ Return your response as JSON.`
 }
 
 /**
- * Simple fallback questions
+ * Simple fallback questions - diverse types to avoid getting stuck
  */
 const FALLBACK_QUESTIONS = [
+  // Basic traits
   'Is your character fictional?',
   'Is your character male?',
+  'Is your character American?',
+  
+  // Categories
   'Is your character from an anime or manga?',
   'Is your character a superhero?',
   'Is your character an athlete?',
@@ -797,7 +822,31 @@ const FALLBACK_QUESTIONS = [
   'Is your character an actor?',
   'Is your character a politician?',
   'Is your character from a TV show?',
-  'Did your character live before 1950?'
+  'Is your character from a video game?',
+  
+  // Era/Time
+  'Did your character live before 1950?',
+  'Is your character still alive today?',
+  'Was your character active in the 2000s or later?',
+  
+  // Characteristics
+  'Does your character have superpowers?',
+  'Is your character known for comedy?',
+  'Is your character known for action?',
+  'Does your character work with a team?',
+  'Is your character a villain?',
+  
+  // Appearance/Physical
+  'Does your character wear a costume or uniform?',
+  'Does your character have distinctive hair?',
+  
+  // Origin/Source
+  'Did your character originate in a comic book?',
+  'Is your character from Japanese media?',
+  
+  // Achievement/Role
+  'Is your character a leader?',
+  'Has your character won major awards?'
 ]
 
 function getFallbackQuestion(askedQuestions: string[]): string {
