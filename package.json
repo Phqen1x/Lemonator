@@ -1,7 +1,7 @@
 {
-  "name": "akinators-canvas",
+  "name": "lemonators",
   "version": "1.0.0",
-  "description": "Reverse Akinator — AI guesses your character while drawing them",
+  "description": "Lemonator — AI guesses your character while drawing them",
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",

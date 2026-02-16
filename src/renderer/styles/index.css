@@ -38,7 +38,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 20px;
   gap: 16px;
   min-width: 0;
@@ -122,6 +121,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
+  order: 3;
 }
 
 .canvas-frame {
@@ -182,6 +183,7 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
+  order: 2;
 }
 
 .answer-btn {
@@ -208,6 +210,53 @@ body {
 .btn-no { background: #e74c3c; }
 .btn-maybe { background: #f39c12; }
 .btn-neutral { background: #95a5a6; }
+
+/* ── Question Bubble ───────────────────────────── */
+
+.question-bubble-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 16px 20px;
+  order: 1;
+}
+
+.question-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 600px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d1f4a 100%);
+  padding: 16px 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.question-bubble-avatar {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.question-bubble-text {
+  flex: 1;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #e0e0e0;
+  font-weight: 500;
+}
 
 /* ── Chat Log ──────────────────────────────── */
 
@@ -491,4 +540,61 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #333;
   border-radius: 3px;
+}
+
+/* ── Title Bar ─────────────────────────────────── */
+
+.title-bar {
+  display: flex;
+  height: 32px;
+  background: #0d0d12;
+  border-bottom: 1px solid #1a1a2e;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.title-bar-drag-region {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+}
+
+.title-bar-title {
+  font-size: 13px;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.title-bar-controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-button {
+  width: 46px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.title-bar-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title-bar-button.close:hover {
+  background: #e81123;
+  color: white;
+}
+
+.title-bar-button svg {
+  display: block;
 }

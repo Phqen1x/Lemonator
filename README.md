@@ -1,1 +1,1 @@
-# AkinatorImage
+# Lemonator

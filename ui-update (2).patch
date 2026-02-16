@@ -1,0 +1,284 @@
+diff --git a/README.md b/README.md
+index 7a5f39f..136c6a6 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-# AkinatorImage
+\ No newline at end of file
++# Lemonator
+diff --git a/index.html b/index.html
+index e330e98..53ca528 100644
+--- a/index.html
++++ b/index.html
+@@ -3,7 +3,7 @@
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+-    <title>Akinator's Canvas</title>
++    <title>Lemonator's</title>
+   </head>
+   <body>
+     <div id="root"></div>
+diff --git a/package.json b/package.json
+index 12de536..b0aaa13 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+-  "name": "akinators-canvas",
++  "name": "lemonators",
+   "version": "1.0.0",
+-  "description": "Reverse Akinator — AI guesses your character while drawing them",
++  "description": "Lemonator — AI guesses your character while drawing them",
+   "main": "dist-electron/main/index.js",
+   "scripts": {
+     "dev": "vite",
+diff --git a/src/main/index.ts b/src/main/index.ts
+index efc5744..f303acd 100644
+--- a/src/main/index.ts
++++ b/src/main/index.ts
+@@ -1,4 +1,4 @@
+-import { app, BrowserWindow } from 'electron'
++import { app, BrowserWindow, ipcMain } from 'electron'
+ import path from 'node:path'
+ 
+ let mainWindow: BrowserWindow | null = null
+@@ -15,8 +15,10 @@ function createWindow() {
+       nodeIntegration: false,
+       webSecurity: false, // Allow localhost API calls
+     },
+-    title: "Akinator's Canvas",
++    title: "Lemonator's",
+     backgroundColor: '#0a0a0f',
++    frame: false,
++    titleBarStyle: 'hidden',
+   })
+ 
+   if (process.env.VITE_DEV_SERVER_URL) {
+@@ -30,6 +32,23 @@ function createWindow() {
+   })
+ }
+ 
++// Window control IPC handlers
++ipcMain.on('window-minimize', () => {
++  mainWindow?.minimize()
++})
++
++ipcMain.on('window-maximize', () => {
++  if (mainWindow?.isMaximized()) {
++    mainWindow.unmaximize()
++  } else {
++    mainWindow?.maximize()
++  }
++})
++
++ipcMain.on('window-close', () => {
++  mainWindow?.close()
++})
++
+ app.whenReady().then(createWindow)
+ 
+ app.on('window-all-closed', () => {
+diff --git a/src/main/preload.ts b/src/main/preload.ts
+index 3ad94f6..27bb2e5 100644
+--- a/src/main/preload.ts
++++ b/src/main/preload.ts
+@@ -1,5 +1,8 @@
+-import { contextBridge } from 'electron'
++import { contextBridge, ipcRenderer } from 'electron'
+ 
+ contextBridge.exposeInMainWorld('electronAPI', {
+   platform: process.platform,
++  minimizeWindow: () => ipcRenderer.send('window-minimize'),
++  maximizeWindow: () => ipcRenderer.send('window-maximize'),
++  closeWindow: () => ipcRenderer.send('window-close'),
+ })
+diff --git a/src/renderer/App.tsx b/src/renderer/App.tsx
+index 2fb0a36..880e748 100644
+--- a/src/renderer/App.tsx
++++ b/src/renderer/App.tsx
+@@ -8,6 +8,8 @@ import AnswerButtons from './components/AnswerButtons'
+ import StartScreen from './components/StartScreen'
+ import RevealScreen from './components/RevealScreen'
+ import StatusBar from './components/StatusBar'
++import TitleBar from './components/TitleBar'
++import QuestionBubble from './components/QuestionBubble'
+ 
+ function GameApp() {
+   const state = useGameState()
+@@ -19,6 +21,7 @@ function GameApp() {
+ 
+   return (
+     <>
++      <TitleBar />
+       {!showGame ? (
+         <StartScreen onStart={startGame} isConnected={isConnected} />
+       ) : (
+@@ -27,8 +30,9 @@ function GameApp() {
+             <DetectiveBrain />
+           </div>
+           <div className="center-column">
+-            <Canvas />
++            <QuestionBubble />
+             <AnswerButtons onAnswer={submitAnswer} />
++            <Canvas />
+           </div>
+           <div className="chat-column">
+             <ChatLog />
+diff --git a/src/renderer/components/StartScreen.tsx b/src/renderer/components/StartScreen.tsx
+index cbe6c4c..de50794 100644
+--- a/src/renderer/components/StartScreen.tsx
++++ b/src/renderer/components/StartScreen.tsx
+@@ -7,7 +7,7 @@ export default function StartScreen({ onStart, isConnected }: Props) {
+   return (
+     <div className="start-screen">
+       <div className="start-content">
+-        <h1 className="start-title">Akinator's Canvas</h1>
++        <h1 className="start-title">Lemonator</h1>
+         <p className="start-subtitle">Think of any character — real or fictional.</p>
+         <p className="start-description">
+           I'll ask you questions and sketch what I think your character looks like,
+diff --git a/src/renderer/styles/index.css b/src/renderer/styles/index.css
+index b1f73f9..75ef2e0 100644
+--- a/src/renderer/styles/index.css
++++ b/src/renderer/styles/index.css
+@@ -38,7 +38,6 @@ body {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+-  justify-content: center;
+   padding: 20px;
+   gap: 16px;
+   min-width: 0;
+@@ -122,6 +121,8 @@ body {
+   display: flex;
+   align-items: center;
+   justify-content: center;
++  flex: 1;
++  order: 3;
+ }
+ 
+ .canvas-frame {
+@@ -182,6 +183,7 @@ body {
+   gap: 8px;
+   flex-wrap: wrap;
+   justify-content: center;
++  order: 2;
+ }
+ 
+ .answer-btn {
+@@ -209,6 +211,53 @@ body {
+ .btn-maybe { background: #f39c12; }
+ .btn-neutral { background: #95a5a6; }
+ 
++/* ── Question Bubble ───────────────────────────── */
++
++.question-bubble-container {
++  width: 100%;
++  display: flex;
++  justify-content: center;
++  padding: 16px 20px;
++  order: 1;
++}
++
++.question-bubble {
++  display: flex;
++  align-items: flex-start;
++  gap: 12px;
++  max-width: 600px;
++  background: linear-gradient(135deg, #1e3a5f 0%, #2d1f4a 100%);
++  padding: 16px 20px;
++  border-radius: 16px;
++  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
++  border: 1px solid rgba(255, 255, 255, 0.1);
++  animation: slideIn 0.3s ease-out;
++}
++
++@keyframes slideIn {
++  from {
++    opacity: 0;
++    transform: translateY(-10px);
++  }
++  to {
++    opacity: 1;
++    transform: translateY(0);
++  }
++}
++
++.question-bubble-avatar {
++  font-size: 24px;
++  flex-shrink: 0;
++}
++
++.question-bubble-text {
++  flex: 1;
++  font-size: 1.1rem;
++  line-height: 1.5;
++  color: #e0e0e0;
++  font-weight: 500;
++}
++
+ /* ── Chat Log ──────────────────────────────── */
+ 
+ .chatlog {
+@@ -492,3 +541,60 @@ body {
+   background: #333;
+   border-radius: 3px;
+ }
++
++/* ── Title Bar ─────────────────────────────────── */
++
++.title-bar {
++  display: flex;
++  height: 32px;
++  background: #0d0d12;
++  border-bottom: 1px solid #1a1a2e;
++  flex-shrink: 0;
++  -webkit-app-region: drag;
++  user-select: none;
++}
++
++.title-bar-drag-region {
++  flex: 1;
++  display: flex;
++  align-items: center;
++  padding-left: 12px;
++}
++
++.title-bar-title {
++  font-size: 13px;
++  color: #a0a0a0;
++  font-weight: 500;
++}
++
++.title-bar-controls {
++  display: flex;
++  -webkit-app-region: no-drag;
++}
++
++.title-bar-button {
++  width: 46px;
++  height: 32px;
++  border: none;
++  background: transparent;
++  color: #e0e0e0;
++  cursor: pointer;
++  transition: background 0.15s ease;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  padding: 0;
++}
++
++.title-bar-button:hover {
++  background: rgba(255, 255, 255, 0.1);
++}
++
++.title-bar-button.close:hover {
++  background: #e81123;
++  color: white;
++}
++
++.title-bar-button svg {
++  display: block;
++}

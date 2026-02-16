@@ -8,6 +8,8 @@ import AnswerButtons from './components/AnswerButtons'
 import StartScreen from './components/StartScreen'
 import RevealScreen from './components/RevealScreen'
 import StatusBar from './components/StatusBar'
+import TitleBar from './components/TitleBar'
+import QuestionBubble from './components/QuestionBubble'
 
 function GameApp() {
   const state = useGameState()
@@ -19,6 +21,7 @@ function GameApp() {
 
   return (
     <>
+      <TitleBar />
       {!showGame ? (
         <StartScreen onStart={startGame} isConnected={isConnected} />
       ) : (
@@ -27,8 +30,9 @@ function GameApp() {
             <DetectiveBrain />
           </div>
           <div className="center-column">
-            <Canvas />
+            <QuestionBubble />
             <AnswerButtons onAnswer={submitAnswer} />
+            <Canvas />
           </div>
           <div className="chat-column">
             <ChatLog />

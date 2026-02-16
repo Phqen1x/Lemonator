@@ -7,7 +7,7 @@ export default function StartScreen({ onStart, isConnected }: Props) {
   return (
     <div className="start-screen">
       <div className="start-content">
-        <h1 className="start-title">Akinator's Canvas</h1>
+        <h1 className="start-title">Lemonator</h1>
         <p className="start-subtitle">Think of any character — real or fictional.</p>
         <p className="start-description">
           I'll ask you questions and sketch what I think your character looks like,

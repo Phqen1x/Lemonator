@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
 
 let mainWindow: BrowserWindow | null = null
@@ -15,8 +15,10 @@ function createWindow() {
       nodeIntegration: false,
       webSecurity: false, // Allow localhost API calls
     },
-    title: "Akinator's Canvas",
+    title: "Lemonator's",
     backgroundColor: '#0a0a0f',
+    frame: false,
+    titleBarStyle: 'hidden',
   })
 
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -29,6 +31,23 @@ function createWindow() {
     mainWindow = null
   })
 }
+
+// Window control IPC handlers
+ipcMain.on('window-minimize', () => {
+  mainWindow?.minimize()
+})
+
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize()
+  } else {
+    mainWindow?.maximize()
+  }
+})
+
+ipcMain.on('window-close', () => {
+  mainWindow?.close()
+})
 
 app.whenReady().then(createWindow)
 
