@@ -109,3 +109,69 @@ are randomly selected. Need more structured testing approach.
 
 Recommend: Fixed test suite of 20-30 diverse characters covering all
 categories and difficulty levels for consistent measurement.
+
+## Iterations 5-9 (Continued Session)
+
+### Iteration 5 (80m) - 0% Success
+**Issue:** Premature guessing with "American + Male"
+**Fix:** Require 5+ traits OR positive category before guessing
+**Result:** Still hitting issues with test infrastructure
+
+### Iteration 6 (89m) - 0% Success  
+**Issue:** finalGuesses hardcoded to [] - never captured
+**Fix:** Track lastGuesses through game loop, return actual guesses
+**Result:** Can now see guesses but they're garbage names
+
+### Iteration 7 (94m) - 0% Success
+**Issue:** Invalid names in guesses ("11", "disambiguation pages")
+**Fix:** Filter invalid character names in getAllCharacters()
+**Result:** Clean names but all guesses wrong
+
+### Iteration 8 (100m) - 0% Success
+**Issue:** Overconfident scoring (95% with only 2-3 traits)
+**Fix:** Conservative confidence scaling:
+- 2-3 traits → 25% base
+- 4-5 traits → 35% base
+- 6-7 traits → 45% base
+- 8+ traits → 55% base
+- Cap at 90% (never 100%)
+**Result:** More realistic confidence but still 0% success
+
+### Iteration 9 (105m) - 20% Success! ✓
+**Issue:** Contradictory traits (actors + NOT_actors) → 0 matches
+**Fix:** When positive category exists, ignore all negative categories
+**Result:** **Ash Ketchum guessed in 9 turns!**
+- Confidence: 71% (was 95% before)
+- First guess correct
+- More reasonable progression
+
+## Key Improvements (Iterations 5-9)
+
+### 1. Confidence Scoring Fixed
+**Before:** 50% base + bonuses = 95% with 3 traits
+**After:** 25-55% base scaling with trait count, cap at 90%
+
+### 2. Contradictory Trait Handling
+**Before:** actors + NOT_actors → impossible to match
+**After:** Positive category takes precedence, negatives ignored
+
+### 3. Premature Guessing Prevention
+**Before:** Guessed with ≤15 candidates + 8 turns
+**After:** Requires 5+ traits OR positive category confirmed
+
+## Total Progress Summary
+
+**Time:** 105 minutes (75% over 1 hour target)
+**Iterations:** 9 test cycles
+**Bugs Fixed:** 8 critical issues
+**Success Rate:** 20% (1/5 characters per run)
+
+**Success:** Ash Ketchum (9 turns, anime category)
+**Typical Failures:** Similar characters in same category
+
+## Next High-Priority Fixes
+1. Fictional trait extraction for TV characters (still broken)
+2. More franchise-specific questions (Dragon Ball, Pokemon, etc.)
+3. Sport-specific questions for athletes (NFL/NBA/MLB)
+4. Show-specific questions for TV (Breaking Bad, Friends, etc.)
+

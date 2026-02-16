@@ -1,0 +1,2309 @@
+{
+  "timestamp": "2026-02-16T00:09:37.366Z",
+  "options": {
+    "numGames": 5,
+    "maxTurns": 25
+  },
+  "metrics": {
+    "totalGames": 5,
+    "successRate": 0.2,
+    "averageTurns": 21.8,
+    "guessDistribution": {
+      "firstGuess": 1,
+      "secondGuess": 0,
+      "thirdGuess": 0,
+      "notInTop3": 4
+    },
+    "categoryPerformance": {
+      "actors": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "anime": {
+        "games": 2,
+        "success": 1,
+        "avgTurns": 17
+      },
+      "superheroes": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      },
+      "tv-characters": {
+        "games": 1,
+        "success": 0,
+        "avgTurns": 25
+      }
+    },
+    "hardestCharacters": [
+      {
+        "name": "Lupita Nyong'o",
+        "turns": 25
+      },
+      {
+        "name": "Green Arrow",
+        "turns": 25
+      },
+      {
+        "name": "Rei Ayanami",
+        "turns": 25
+      },
+      {
+        "name": "Tyrion Lannister",
+        "turns": 25
+      },
+      {
+        "name": "Ash Ketchum",
+        "turns": 9
+      }
+    ]
+  },
+  "results": [
+    {
+      "characterName": "Lupita Nyong'o",
+      "category": "actors",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "Emma Watson",
+        "Jennifer Lawrence",
+        "Meryl Streep"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "female",
+          "confidence": 0.9,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "actors",
+          "confidence": 0.95,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "false",
+          "confidence": 0.95,
+          "turnAdded": 8
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 14
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 16
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 18
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 24
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.2986033414803476
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.2956303093027441
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.29381350081801244
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.29290188721456434
+            },
+            {
+              "name": "Nicolas Sarkozy",
+              "confidence": 0.29115119671373463
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.29003951322062893
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.29500161984273343
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.2942864205180343
+            },
+            {
+              "name": "Ronald Reagan",
+              "confidence": 0.28974930990768144
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Jennifer Aniston",
+              "confidence": 0.5695092007862362
+            },
+            {
+              "name": "Madonna",
+              "confidence": 0.5693991952805915
+            },
+            {
+              "name": "Aristotle",
+              "confidence": 0.5690988454784635
+            }
+          ]
+        },
+        {
+          "question": "Is your character from the United Kingdom?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Kate Winslet",
+              "confidence": 0.6690844416597863
+            },
+            {
+              "name": "Lupita Nyong'o",
+              "confidence": 0.6685495428501753
+            },
+            {
+              "name": "Julia Roberts",
+              "confidence": 0.6659409598429177
+            }
+          ]
+        },
+        {
+          "question": "Is your character from the United Kingdom?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Anne Hathaway",
+              "confidence": 0.669320186440037
+            },
+            {
+              "name": "Zendaya",
+              "confidence": 0.6665803926395539
+            },
+            {
+              "name": "Gal Gadot",
+              "confidence": 0.665475329555452
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Lupita Nyong'o",
+              "confidence": 0.6699720355452734
+            },
+            {
+              "name": "Kate Winslet",
+              "confidence": 0.6682583183721307
+            },
+            {
+              "name": "Nicole Kidman",
+              "confidence": 0.6668795702368012
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Lupita Nyong'o",
+              "confidence": 0.668932571662639
+            },
+            {
+              "name": "Kate Winslet",
+              "confidence": 0.6687069053716532
+            },
+            {
+              "name": "Sandra Bullock",
+              "confidence": 0.6681943009513183
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.7678255946002682
+            },
+            {
+              "name": "Julia Roberts",
+              "confidence": 0.7677762549347045
+            },
+            {
+              "name": "Lupita Nyong'o",
+              "confidence": 0.7675656474698258
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Zendaya",
+              "confidence": 0.7682624728071356
+            },
+            {
+              "name": "Charlize Theron",
+              "confidence": 0.767592985603876
+            },
+            {
+              "name": "Kate Winslet",
+              "confidence": 0.7645700863516561
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Emma Watson",
+              "confidence": 0.769131288389771
+            },
+            {
+              "name": "Meryl Streep",
+              "confidence": 0.7690088457551165
+            },
+            {
+              "name": "Scarlett Johansson",
+              "confidence": 0.7688364428529488
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.769688325377048
+            },
+            {
+              "name": "Lupita Nyong'o",
+              "confidence": 0.7690732875350073
+            },
+            {
+              "name": "Zendaya",
+              "confidence": 0.7671853571673746
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Julia Roberts",
+              "confidence": 0.8693292215089482
+            },
+            {
+              "name": "Jennifer Aniston",
+              "confidence": 0.8692409623503503
+            },
+            {
+              "name": "Meryl Streep",
+              "confidence": 0.8689758067833776
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Charlize Theron",
+              "confidence": 0.8696027506017154
+            },
+            {
+              "name": "Zendaya",
+              "confidence": 0.8671025581906523
+            },
+            {
+              "name": "Jennifer Aniston",
+              "confidence": 0.8661581553131
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.8692629534114986
+            },
+            {
+              "name": "Sandra Bullock",
+              "confidence": 0.868065090087953
+            },
+            {
+              "name": "Gal Gadot",
+              "confidence": 0.8676617312378448
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Kate Winslet",
+              "confidence": 0.8689496395741272
+            },
+            {
+              "name": "Gal Gadot",
+              "confidence": 0.8686465481489866
+            },
+            {
+              "name": "Charlize Theron",
+              "confidence": 0.8682394909754076
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for action or physical roles?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Angelina Jolie",
+              "confidence": 0.9
+            },
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            }
+          ]
+        },
+        {
+          "question": "Is your character from Europe?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Emma Watson",
+              "confidence": 0.9
+            },
+            {
+              "name": "Jennifer Lawrence",
+              "confidence": 0.9
+            },
+            {
+              "name": "Meryl Streep",
+              "confidence": 0.9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Ash Ketchum",
+      "category": "anime",
+      "success": true,
+      "turnsToGuess": 9,
+      "totalTurns": 8,
+      "finalGuesses": [
+        "Goku",
+        "Krillin",
+        "Edward Elric"
+      ],
+      "correctGuessRank": 1,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.95,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "has_powers",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 8
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.2988651651292401
+            },
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.2957564761581551
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.29510113834886764
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.2990498302185425
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.29902271140707687
+            },
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.2978887246578069
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.2994485287207886
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.29931594999640965
+            },
+            {
+              "name": "Emmanuel Macron",
+              "confidence": 0.2973792761795069
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5954513427836415
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.5926235277887051
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.590641382759462
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.5888917323900156
+            },
+            {
+              "name": "Jimmy Carter",
+              "confidence": 0.5887439982554996
+            },
+            {
+              "name": "John F. Kennedy",
+              "confidence": 0.5859562980900969
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Phoebe Buffay",
+              "confidence": 0.5698295988390151
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.569806164310766
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.56953719617186
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superpowers?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Goku",
+              "confidence": 0.7198336470838783
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7184097899638384
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7121178052697967
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superhuman speed?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Goku",
+              "confidence": 0.7178132207967712
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7127601688555028
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7121494225965231
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Green Arrow",
+      "category": "superheroes",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "The Flash",
+        "Krillin",
+        "Edward Elric"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "has_powers",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 8
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.29297695882812536
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.292141826231403
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.2898320744294109
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barack Obama",
+              "confidence": 0.2993016121522968
+            },
+            {
+              "name": "François Hollande",
+              "confidence": 0.29345688922112395
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.29213034672128146
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.2972191319062391
+            },
+            {
+              "name": "Hosni Mubarak",
+              "confidence": 0.2938228349882957
+            },
+            {
+              "name": "Nicolas Sarkozy",
+              "confidence": 0.2936002366639584
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5997832667632261
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.5966807165383513
+            },
+            {
+              "name": "Richard Nixon",
+              "confidence": 0.5862561312473702
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.5974101326220717
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.595897005365763
+            },
+            {
+              "name": "Barack Obama",
+              "confidence": 0.5956502212108075
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.5687536814254375
+            },
+            {
+              "name": "Dwight Schrute",
+              "confidence": 0.5681331560966566
+            },
+            {
+              "name": "Stan Marsh",
+              "confidence": 0.5672662811316066
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superpowers?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.719530718549201
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7159444780433897
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7148030303477171
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superhuman speed?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7195508498677661
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7147321229913376
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7139107221465989
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for being part of a team or group?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.8199925030395901
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.8138739366785563
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.8092780850442793
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong connection to a specific team or group?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Krillin",
+              "confidence": 0.7161715021251173
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7150006277221577
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.712430785037183
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong connection to a specific universe or franchise?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7181937978664754
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.712446723714905
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7119083881404161
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7198792398885581
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7140729330753284
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7124945514994953
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Krillin",
+              "confidence": 0.7137451436465537
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7131032850644392
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7101342333679861
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Krillin",
+              "confidence": 0.7174751205735438
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7147643233140374
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7134940199527653
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "The Flash",
+              "confidence": 0.7169887047028789
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7160875991574863
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7158316865059587
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7178225598926748
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7166401327794939
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7130414942234281
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7159005857137534
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7152754237669944
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7143009639298806
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Krillin",
+              "confidence": 0.7171526648309492
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7119102242398506
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7114664340977406
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7181892339949536
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7151618855936355
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7138294272930094
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7186321159427529
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7145696231422325
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7133585548306813
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7163744459259841
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7146402174749099
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7131409907180312
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Goku",
+              "confidence": 0.7177048300058516
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7138760327924588
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7136744115625616
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7157854821697021
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7114571973291061
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7102654689040571
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Green Lantern",
+              "confidence": 0.71918526106247
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7167229517279496
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7155801141510559
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "The Flash",
+              "confidence": 0.7190850866293985
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7186357673777746
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7166112736792617
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Rei Ayanami",
+      "category": "anime",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "Naruto Uzumaki",
+        "Ash Ketchum",
+        "The Flash"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_tv",
+          "confidence": 0.9,
+          "turnAdded": 7
+        },
+        {
+          "key": "has_powers",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 8
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.2999678275168701
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.2982946637199472
+            },
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.2975512609362973
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.2995628101154932
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.29249931680469926
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.29100090074550383
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.29943429375960356
+            },
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.2985178042161678
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.2942398841149964
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "John F. Kennedy",
+              "confidence": 0.5898376495703909
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5893799351702107
+            },
+            {
+              "name": "George H. W. Bush",
+              "confidence": 0.5866718037657345
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.5979127927576285
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5972040380818916
+            },
+            {
+              "name": "Franklin D. Roosevelt",
+              "confidence": 0.5899492473016321
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Dexter Morgan",
+              "confidence": 0.5695383575793556
+            },
+            {
+              "name": "Ross Geller",
+              "confidence": 0.5690843200476955
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.568874743822649
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superhuman abilities?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Goku",
+              "confidence": 0.7190814404639585
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7154183895854789
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7142579034192388
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superhuman speed?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7182829373585691
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7106567497014714
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7086422389778677
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong, heroic personality?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Krillin",
+              "confidence": 0.8175994030666984
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.8154147166964323
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.8113189698408202
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having superhuman strength?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7177718841844883
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.716894266039922
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7143590007038221
+            }
+          ]
+        },
+        {
+          "question": "Is your character known for having a strong, heroic personality?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.8178556709322609
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.8166317382985827
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.8166243233332704
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "The Flash",
+              "confidence": 0.7166220686704714
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7134578525268512
+            },
+            {
+              "name": "Edward Elric",
+              "confidence": 0.712251874489517
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Goku",
+              "confidence": 0.7184122495123291
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7109632631792944
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7053350147210559
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7179087836008525
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.71747693958188
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7149766873659481
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7197762532099633
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7176453259487588
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.715825891851181
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7158436237690327
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7158418793626872
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7147738850062126
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7174523369807685
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7171967219767522
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7155749476826236
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7190005239916177
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.714667437856496
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7104263411995949
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7132230804179825
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7094668741885842
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7093822074617484
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7199942927016414
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7189186878803487
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7159769339230188
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7189757062830174
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7117300852938078
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7117002381852965
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Edward Elric",
+              "confidence": 0.7141023625863221
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7134493154080418
+            },
+            {
+              "name": "Goku",
+              "confidence": 0.7095724433800248
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Green Lantern",
+              "confidence": 0.7199601983213311
+            },
+            {
+              "name": "Krillin",
+              "confidence": 0.7162742592108626
+            },
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7152055969183857
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.7180069619426772
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7130623503684834
+            },
+            {
+              "name": "Green Lantern",
+              "confidence": 0.711740247744727
+            }
+          ]
+        },
+        {
+          "question": "Based on your answers, I think your character is one of these. Am I close?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Naruto Uzumaki",
+              "confidence": 0.717140252353014
+            },
+            {
+              "name": "Ash Ketchum",
+              "confidence": 0.7162124053888244
+            },
+            {
+              "name": "The Flash",
+              "confidence": 0.7145108312504903
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "characterName": "Tyrion Lannister",
+      "category": "tv-characters",
+      "success": false,
+      "turnsToGuess": 25,
+      "totalTurns": 25,
+      "finalGuesses": [
+        "Jim Halpert",
+        "Dwight Schrute",
+        "Sheldon Cooper"
+      ],
+      "correctGuessRank": null,
+      "traits": [
+        {
+          "key": "gender",
+          "value": "male",
+          "confidence": 0.75,
+          "turnAdded": 4
+        },
+        {
+          "key": "category",
+          "value": "NOT_actors",
+          "confidence": 0.9,
+          "turnAdded": 5
+        },
+        {
+          "key": "fictional",
+          "value": "true",
+          "confidence": 0.95,
+          "turnAdded": 6
+        },
+        {
+          "key": "origin_medium",
+          "value": "tv",
+          "confidence": 0.95,
+          "turnAdded": 7
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_anime",
+          "confidence": 0.9,
+          "turnAdded": 8
+        },
+        {
+          "key": "category",
+          "value": "NOT_superheroes",
+          "confidence": 0.9,
+          "turnAdded": 10
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_comic-book",
+          "confidence": 0.9,
+          "turnAdded": 12
+        },
+        {
+          "key": "origin_medium",
+          "value": "NOT_video-game",
+          "confidence": 0.9,
+          "turnAdded": 14
+        },
+        {
+          "key": "category",
+          "value": "NOT_athletes",
+          "confidence": 0.9,
+          "turnAdded": 16
+        },
+        {
+          "key": "category",
+          "value": "NOT_politicians",
+          "confidence": 0.9,
+          "turnAdded": 18
+        },
+        {
+          "key": "category",
+          "value": "NOT_musicians",
+          "confidence": 0.9,
+          "turnAdded": 20
+        },
+        {
+          "key": "category",
+          "value": "NOT_historical",
+          "confidence": 0.9,
+          "turnAdded": 22
+        }
+      ],
+      "questionHistory": [
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.29954525675386295
+            },
+            {
+              "name": "Hugo Chávez",
+              "confidence": 0.29883930994050484
+            },
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.2982297425506182
+            }
+          ]
+        },
+        {
+          "question": "Is your character American?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Joe Biden",
+              "confidence": 0.2985471148443491
+            },
+            {
+              "name": "Nicolas Sarkozy",
+              "confidence": 0.29442010547389974
+            },
+            {
+              "name": "Donald Trump",
+              "confidence": 0.29072986086424324
+            }
+          ]
+        },
+        {
+          "question": "Is your character male?",
+          "answer": "probably",
+          "topGuesses": [
+            {
+              "name": "Vladimir Putin",
+              "confidence": 0.2963819408436615
+            },
+            {
+              "name": "Recep Tayyip Erdoğan",
+              "confidence": 0.2962498693703561
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.2959814556598482
+            }
+          ]
+        },
+        {
+          "question": "Is your character an actor?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5971180017231548
+            },
+            {
+              "name": "George H. W. Bush",
+              "confidence": 0.588666979227061
+            },
+            {
+              "name": "Joe Biden",
+              "confidence": 0.5884706066961738
+            }
+          ]
+        },
+        {
+          "question": "Is your character fictional?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Donald Trump",
+              "confidence": 0.5911986335785518
+            },
+            {
+              "name": "Theodore Roosevelt",
+              "confidence": 0.5896431030917623
+            },
+            {
+              "name": "Jimmy Carter",
+              "confidence": 0.5888854638848192
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a TV show?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Marge Simpson",
+              "confidence": 0.5695440402590689
+            },
+            {
+              "name": "Lisa Simpson",
+              "confidence": 0.5693629642123216
+            },
+            {
+              "name": "Stan Marsh",
+              "confidence": 0.5676347124536967
+            }
+          ]
+        },
+        {
+          "question": "Did your character originate in an anime or manga?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barney Stinson",
+              "confidence": 0.6693590228042043
+            },
+            {
+              "name": "Jim Halpert",
+              "confidence": 0.668699992965441
+            },
+            {
+              "name": "Dwight Schrute",
+              "confidence": 0.6682786935496733
+            }
+          ]
+        },
+        {
+          "question": "Did your character originate in an anime or manga?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Robin Scherbatsky",
+              "confidence": 0.6698443090239654
+            },
+            {
+              "name": "Sheldon Cooper",
+              "confidence": 0.6696966401081955
+            },
+            {
+              "name": "Lily Aldrin",
+              "confidence": 0.6694577070487917
+            }
+          ]
+        },
+        {
+          "question": "Is your character a superhero?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Sheldon Cooper",
+              "confidence": 0.7684862060772735
+            },
+            {
+              "name": "Lisa Simpson",
+              "confidence": 0.7672258730941076
+            },
+            {
+              "name": "Stan Marsh",
+              "confidence": 0.7650792095872575
+            }
+          ]
+        },
+        {
+          "question": "Is your character a superhero?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Marge Simpson",
+              "confidence": 0.7689676482966807
+            },
+            {
+              "name": "Ted Mosby",
+              "confidence": 0.7685447075085864
+            },
+            {
+              "name": "Homer Simpson",
+              "confidence": 0.7683224795474034
+            }
+          ]
+        },
+        {
+          "question": "Did your character originate in a comic book?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Monica Geller",
+              "confidence": 0.769339870240215
+            },
+            {
+              "name": "Lisa Simpson",
+              "confidence": 0.7689417271981893
+            },
+            {
+              "name": "Stan Marsh",
+              "confidence": 0.7680267675216709
+            }
+          ]
+        },
+        {
+          "question": "Did your character originate in a comic book?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Stan Marsh",
+              "confidence": 0.7690290354776783
+            },
+            {
+              "name": "Marge Simpson",
+              "confidence": 0.7688552420167786
+            },
+            {
+              "name": "Homer Simpson",
+              "confidence": 0.7683566590162323
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a video game?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Ted Mosby",
+              "confidence": 0.8696090893534424
+            },
+            {
+              "name": "Buffy Summers",
+              "confidence": 0.8692206652070644
+            },
+            {
+              "name": "Chandler Bing",
+              "confidence": 0.868529955446559
+            }
+          ]
+        },
+        {
+          "question": "Is your character from a video game?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Robin Scherbatsky",
+              "confidence": 0.867556704722743
+            },
+            {
+              "name": "Sheldon Cooper",
+              "confidence": 0.8675035640188073
+            },
+            {
+              "name": "Jim Halpert",
+              "confidence": 0.8666398044800753
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Lisa Simpson",
+              "confidence": 0.8689564557496093
+            },
+            {
+              "name": "Stan Marsh",
+              "confidence": 0.8678404779342679
+            },
+            {
+              "name": "Rick Grimes",
+              "confidence": 0.8674236296324681
+            }
+          ]
+        },
+        {
+          "question": "Is your character an athlete?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Barney Stinson",
+              "confidence": 0.8683878392475326
+            },
+            {
+              "name": "Ross Geller",
+              "confidence": 0.8671023241292346
+            },
+            {
+              "name": "Dwight Schrute",
+              "confidence": 0.8667588348524127
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Chandler Bing",
+              "confidence": 0.8675077474745774
+            },
+            {
+              "name": "Bart Simpson",
+              "confidence": 0.8657104278254808
+            },
+            {
+              "name": "Homer Simpson",
+              "confidence": 0.8654836283862214
+            }
+          ]
+        },
+        {
+          "question": "Is your character a politician?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Rick Grimes",
+              "confidence": 0.8696363247109608
+            },
+            {
+              "name": "Lily Aldrin",
+              "confidence": 0.8689709521777951
+            },
+            {
+              "name": "Dexter Morgan",
+              "confidence": 0.868803775019696
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Robin Scherbatsky",
+              "confidence": 0.8691887009444201
+            },
+            {
+              "name": "Daryl Dixon",
+              "confidence": 0.8687006585681535
+            },
+            {
+              "name": "Joey Tribbiani",
+              "confidence": 0.8685922818774656
+            }
+          ]
+        },
+        {
+          "question": "Is your character a musician or singer?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Tony Soprano",
+              "confidence": 0.8681669185317464
+            },
+            {
+              "name": "Jim Halpert",
+              "confidence": 0.8678614308401076
+            },
+            {
+              "name": "Ted Mosby",
+              "confidence": 0.8670567957536334
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Marshall Eriksen",
+              "confidence": 0.8699204695440523
+            },
+            {
+              "name": "Joey Tribbiani",
+              "confidence": 0.8696616576010237
+            },
+            {
+              "name": "Buffy Summers",
+              "confidence": 0.8692886090228815
+            }
+          ]
+        },
+        {
+          "question": "Is your character a historical figure (died before 1950)?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Sheldon Cooper",
+              "confidence": 0.8678975606225967
+            },
+            {
+              "name": "Bart Simpson",
+              "confidence": 0.8678845144276447
+            },
+            {
+              "name": "Phoebe Buffay",
+              "confidence": 0.8676808648426226
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Marshall Eriksen",
+              "confidence": 0.8699759188572842
+            },
+            {
+              "name": "Marge Simpson",
+              "confidence": 0.8684561711175671
+            },
+            {
+              "name": "Jim Halpert",
+              "confidence": 0.8682450961168086
+            }
+          ]
+        },
+        {
+          "question": "Is your character still alive today?",
+          "answer": "yes",
+          "topGuesses": [
+            {
+              "name": "Chandler Bing",
+              "confidence": 0.868961807891418
+            },
+            {
+              "name": "Sheldon Cooper",
+              "confidence": 0.868802104368124
+            },
+            {
+              "name": "Phoebe Buffay",
+              "confidence": 0.8680195647041187
+            }
+          ]
+        },
+        {
+          "question": "Is your character known primarily for comedy?",
+          "answer": "no",
+          "topGuesses": [
+            {
+              "name": "Jim Halpert",
+              "confidence": 0.8694225976879246
+            },
+            {
+              "name": "Dwight Schrute",
+              "confidence": 0.8694055113089345
+            },
+            {
+              "name": "Sheldon Cooper",
+              "confidence": 0.8687579621900883
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
