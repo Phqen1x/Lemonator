@@ -399,15 +399,18 @@ async function askNextQuestion(
         console.info('[Detective-RAG] Using relaxed filtering to continue game')
         console.info('[Detective-RAG] Top guesses with relaxed traits:', relaxedGuesses.map(g => g.name))
         
-        // If we have very few candidates, just make guesses
+        // If we have very few candidates, make a direct guess
         if (relaxedCandidates.length <= 10 && turns.length >= 12) {
-          console.info('[Detective-RAG] Few candidates remaining, making direct guesses')
-          return {
-            question: 'Is your character one of these?',
-            topGuesses: relaxedGuesses.slice(0, 3).map(g => ({ 
-              name: g.name, 
-              confidence: g.confidence * 0.6  // Reduced confidence due to relaxed filtering
-            }))
+          console.info('[Detective-RAG] Few candidates remaining, making direct guess')
+          const topGuess = relaxedGuesses[0]
+          if (topGuess) {
+            return {
+              question: `Is your character ${topGuess.name}?`,
+              topGuesses: [{ 
+                name: topGuess.name, 
+                confidence: topGuess.confidence * 0.6  // Reduced confidence due to relaxed filtering
+              }]
+            }
           }
         }
         
@@ -429,13 +432,16 @@ async function askNextQuestion(
           }
         }
         
-        // Fallback: make guesses
-        return {
-          question: 'Is your character one of these?',
-          topGuesses: relaxedGuesses.slice(0, 3).map(g => ({ 
-            name: g.name, 
-            confidence: g.confidence * 0.6 
-          }))
+        // Fallback: make a direct guess
+        const topGuess = relaxedGuesses[0]
+        if (topGuess) {
+          return {
+            question: `Is your character ${topGuess.name}?`,
+            topGuesses: [{ 
+              name: topGuess.name, 
+              confidence: topGuess.confidence * 0.6 
+            }]
+          }
         }
       }
     }
@@ -579,9 +585,13 @@ async function askNextQuestion(
         }
       }
       
-      return {
-        question: `Based on your answers, I think your character is one of these. Am I close?`,
-        topGuesses: guesses
+      // Make a single direct guess with the top candidate
+      const topGuess = guesses[0]
+      if (topGuess) {
+        return {
+          question: `Is your character ${topGuess.name}?`,
+          topGuesses: [topGuess]
+        }
       }
     } catch (error) {
       console.error('[Detective-RAG] Failed to guess beyond database:', error)
@@ -673,11 +683,17 @@ async function askNextQuestion(
   const enoughTurnsSinceRejection = turnsSinceLastRejection >= 4 || rejectedGuesses.length === 0
   
   if (remainingCandidates.length <= 10 && turns.length >= 12 && hasEnoughTraits && enoughTurnsSinceRejection) {
-    console.info('[Detective-RAG] Small candidate pool (≤10) with sufficient traits, making direct guesses')
+    console.info('[Detective-RAG] Small candidate pool (≤10) with sufficient traits, making direct guess')
     console.info(`[Detective-RAG] Traits: ${traits.length}, Has category: ${hasEnoughTraits}`)
-    return {
-      question: 'Based on your answers, I think your character is one of these. Am I close?',
-      topGuesses: hybridGuesses.slice(0, 5).map(g => ({ name: g.name, confidence: g.confidence }))
+    
+    // Make a single direct guess with the top candidate
+    const topGuess = hybridGuesses[0]
+    if (topGuess) {
+      console.info(`[Detective-RAG] Direct guess: ${topGuess.name} (${Math.round(topGuess.confidence * 100)}%)`)
+      return {
+        question: `Is your character ${topGuess.name}?`,
+        topGuesses: [{ name: topGuess.name, confidence: topGuess.confidence }]
+      }
     }
   }
   
@@ -804,16 +820,30 @@ export async function askDetective(
   console.info('[Detective-RAG] Answer:', answer)
 
   const newTraits: (Trait & TurnAdded)[] = []
+  let updatedRejectedGuesses = [...rejectedGuesses]
 
-  // Step 1: Extract trait from previous answer (if any)
+  // Step 1: Check if previous question was a character guess
   if (previousQuestion && answer) {
-    console.info('[Detective-RAG] Extracting trait from Q&A...')
-    const extractedTrait = await extractTrait(previousQuestion, answer, turnAdded)
-    if (extractedTrait) {
-      newTraits.push({ ...extractedTrait, turnAdded })
-      console.info('[Detective-RAG] ✓ Extracted trait:', extractedTrait.key, '=', extractedTrait.value, `(confidence: ${Math.round(extractedTrait.confidence * 100)}%)`)
+    const guessMatch = previousQuestion.match(/^Is your character (.+)\?$/i)
+    if (guessMatch) {
+      const guessedName = guessMatch[1]
+      if (answer === 'no' || answer === 'probably_not') {
+        console.info(`[Detective-RAG] ✗ User rejected guess: ${guessedName}`)
+        updatedRejectedGuesses.push(guessedName)
+      } else if (answer === 'yes') {
+        console.info(`[Detective-RAG] ✓ User confirmed guess: ${guessedName}!`)
+        // This is handled by useGameLoop with CONFIRM_GUESS
+      }
     } else {
-      console.warn('[Detective-RAG] ✗ No trait extracted from answer')
+      // Regular question - extract trait
+      console.info('[Detective-RAG] Extracting trait from Q&A...')
+      const extractedTrait = await extractTrait(previousQuestion, answer, turnAdded)
+      if (extractedTrait) {
+        newTraits.push({ ...extractedTrait, turnAdded })
+        console.info('[Detective-RAG] ✓ Extracted trait:', extractedTrait.key, '=', extractedTrait.value, `(confidence: ${Math.round(extractedTrait.confidence * 100)}%)`)
+      } else {
+        console.warn('[Detective-RAG] ✗ No trait extracted from answer')
+      }
     }
   }
 
@@ -821,7 +851,7 @@ export async function askDetective(
   const updatedTraits = [...traits, ...newTraits]
   console.info('[Detective-RAG] Updated traits for filtering:', updatedTraits.length, updatedTraits)
   
-  const { question, topGuesses } = await askNextQuestion(updatedTraits, turns, rejectedGuesses)
+  const { question, topGuesses } = await askNextQuestion(updatedTraits, turns, updatedRejectedGuesses)
 
   console.info('[Detective-RAG] ===== RESULTS =====')
   console.info('[Detective-RAG] Next question:', question)
