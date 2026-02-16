@@ -594,14 +594,17 @@ async function askNextQuestion(
   }
 
   // Get top guesses from RAG (database)
-  const ragGuesses = getRagTopGuesses(traits, 5)
+  const ragGuessesRaw = getRagTopGuesses(traits, 5)
     .filter(g => !rejectedGuesses.some(r => r.toLowerCase() === g.name.toLowerCase()))
+  
+  // Convert to simple Guess format for consistency with LLM guesses
+  const ragGuesses: Guess[] = ragGuessesRaw.map(g => ({ name: g.name, confidence: g.confidence }))
   
   console.info('[Detective-RAG] RAG top guesses:', ragGuesses.map(g => `${g.name} (${Math.round(g.confidence * 100)}%)`))
 
   // HYBRID APPROACH: Mix database and LLM guesses for better coverage
   // But be conservative - only use LLM when database has limited options
-  let hybridGuesses = ragGuesses
+  let hybridGuesses: Guess[] = ragGuesses
   
   // Only augment with LLM if:
   // 1. We have sufficient turns/traits (20+/7+)

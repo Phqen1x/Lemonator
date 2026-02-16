@@ -1,9 +1,10 @@
-import { useGameState } from '../store/gameStore'
+import { useGameState } from '../context/GameContext'
 
 export default function QuestionBubble() {
   const { currentQuestion, phase } = useGameState()
 
-  if (phase !== 'playing' || !currentQuestion) {
+  // Show question during asking and waiting phases
+  if ((phase !== 'asking' && phase !== 'waiting_for_answer') || !currentQuestion) {
     return null
   }
 
