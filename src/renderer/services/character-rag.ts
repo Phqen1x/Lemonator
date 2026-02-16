@@ -475,6 +475,11 @@ function inferGender(char: CharacterData): 'male' | 'female' | 'unknown' {
 /**
  * Get top N character guesses based on confirmed traits
  * Returns characters sorted by how well they match the traits
+ * 
+ * CRITICAL: Confidence should scale with trait count AND specificity
+ * - Few traits (2-3) → Low confidence (30-50%)
+ * - Medium traits (4-6) → Medium confidence (50-70%)
+ * - Many traits (7+) → High confidence (70-90%)
  */
 export function getTopGuesses(
   traits: Trait[],
@@ -502,29 +507,53 @@ export function getTopGuesses(
     // Calculate match percentage
     const matchPercentage = totalWeight > 0 ? matchScore / totalWeight : 0
     
-    // Base confidence on match quality and trait count
-    const traitBonus = Math.min(traits.length * 0.05, 0.3) // More traits = more confidence
-    const factsBonus = Math.min(char.distinctive_facts.length * 0.01, 0.1) // More facts = slight boost
+    // CRITICAL: Start with LOW base confidence
+    // Only increase as we gather more discriminating traits
+    let baseConfidence = 0.25 // Start at 25%
     
-    // Add recency/prominence bonus for more recent/well-known figures
+    // Scale confidence based on number of CONFIRMED traits
+    // More traits = more confidence, but conservative scaling
+    const traitCount = traits.length
+    
+    if (traitCount >= 8) {
+      baseConfidence = 0.55 // 8+ traits → start at 55%
+    } else if (traitCount >= 6) {
+      baseConfidence = 0.45 // 6-7 traits → start at 45%
+    } else if (traitCount >= 4) {
+      baseConfidence = 0.35 // 4-5 traits → start at 35%
+    }
+    // else 2-3 traits → stay at 25%
+    
+    // Match quality bonus (if perfect match, add up to 30%)
+    const matchBonus = matchPercentage * 0.3
+    
+    // Specificity bonus: Positive category traits are more discriminating than negative
+    const hasPositiveCategory = traits.some(t => 
+      t.key === 'category' && !t.value.startsWith('NOT_')
+    )
+    const specificityBonus = hasPositiveCategory ? 0.1 : 0
+    
+    // Narrow pool bonus: If very few candidates left, slightly more confident
+    const candidatePoolBonus = candidates.length <= 5 ? 0.1 : 
+                                candidates.length <= 10 ? 0.05 : 0
+    
+    // Prominence bonus (small - only 2-3%)
     let prominenceBonus = 0
     const facts = char.distinctive_facts.join(' ')
-    // Check for recent years in facts (indicates contemporary figure)
     if (facts.includes('201') || facts.includes('202')) {
-      prominenceBonus += 0.03
+      prominenceBonus += 0.01 // Recent figure
     }
-    // Check for prominence indicators
-    if (facts.includes('President') || facts.includes('award') || facts.includes('famous') || 
-        facts.includes('known for') || facts.includes('star')) {
-      prominenceBonus += 0.02
+    if (facts.includes('President') || facts.includes('award') || facts.includes('Olympic')) {
+      prominenceBonus += 0.02 // High prominence
     }
     
-    // Add small random variance to break perfect ties
-    const randomTiebreaker = (Math.random() * 0.05)
+    // Small random variance to break ties (1-2% max)
+    const randomTiebreaker = (Math.random() * 0.02)
     
+    // Calculate final confidence
     const confidence = Math.min(
-      0.5 + (matchPercentage * 0.3) + traitBonus + factsBonus + prominenceBonus + randomTiebreaker,
-      0.95
+      baseConfidence + matchBonus + specificityBonus + candidatePoolBonus + prominenceBonus + randomTiebreaker,
+      0.90 // Cap at 90% (never be 100% certain)
     )
     
     return {
