@@ -388,6 +388,12 @@ export function getMostInformativeQuestion(
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('baseball') || facts.includes('mlb')
     }, fictionOnly: false },
+    { q: 'Is your character a combat sports athlete (boxing, MMA, wrestling)?', test: (c: CharacterData) => {
+      if (c.category !== 'athletes') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('boxing') || facts.includes('mma') || facts.includes('ufc') || 
+             facts.includes('wrestling') || facts.includes('fighter') || facts.includes('martial arts')
+    }, fictionOnly: false },
     
     // Actors
     { q: 'Is your character from the United Kingdom?', test: (c: CharacterData) => {
@@ -433,6 +439,12 @@ export function getMostInformativeQuestion(
       if (c.category !== 'anime') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('one piece')
+    }, fictionOnly: true },
+    { q: 'Is your character a villain or antagonist?', test: (c: CharacterData) => {
+      if (c.category !== 'anime' && c.category !== 'superheroes' && c.category !== 'tv-characters') return false
+      const facts = c.distinctive_facts.join(' ').toLowerCase()
+      return facts.includes('villain') || facts.includes('antagonist') || facts.includes('enemy') ||
+             facts.includes('evil') || facts.includes('bad guy')
     }, fictionOnly: true },
     
     // Musicians
