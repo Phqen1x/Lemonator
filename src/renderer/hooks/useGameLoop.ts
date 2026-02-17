@@ -277,6 +277,7 @@ export function useGameLoop() {
         
         // CRITICAL: Check if the new question is also a guess!
         // This can happen when the AI narrows down to another character after rejection
+        // HOWEVER: DO NOT allow back-to-back guesses! AI needs discriminating questions first.
         const guessMatch = question.match(/^Is your character (.+)\?$/i)
         const guessName = guessMatch?.[1]?.trim()
         const traitKeywords = [
@@ -286,7 +287,12 @@ export function useGameLoop() {
         ]
         const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
 
-        if (isCharacterGuessQuestion && guessName) {
+        // Check if previous turn was also a guess - prevent back-to-back guessing
+        const lastTurn = s.turns.length > 0 ? s.turns[s.turns.length - 1] : null
+        const lastQuestionWasGuess = lastTurn && /^Is your character [A-Z]/.test(lastTurn.question) && 
+          !traitKeywords.some(kw => lastTurn.question.toLowerCase().includes(kw))
+
+        if (isCharacterGuessQuestion && guessName && !lastQuestionWasGuess) {
           console.log(`[UI] 🎯 Turn ${s.turn + 1}: GUESS AFTER REJECTION - "${question}" → Guessing: ${guessName}`)
           dispatch({ type: 'MAKE_GUESS', guess: guessName })
           
@@ -300,6 +306,10 @@ export function useGameLoop() {
               console.warn('[GameLoop] Character render failed:', error)
             })
         } else {
+          // If back-to-back guess detected, treat it as a regular question
+          if (isCharacterGuessQuestion && lastQuestionWasGuess) {
+            console.log(`[UI] ⚠️  Turn ${s.turn + 1}: Blocked back-to-back guess - asking as question instead: "${question}"`)
+          }
           dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
         }
       } catch (e) {

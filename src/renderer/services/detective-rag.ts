@@ -553,11 +553,18 @@ async function askNextQuestion(
   let remainingCandidates = filterCharactersByTraits(traits)
   console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match with strict filtering`)
   
-  // WIKIPEDIA AUGMENTATION: From turn 5 onwards, supplement with Wikipedia search
+  // WIKIPEDIA AUGMENTATION: Only after a positive category is determined
   // This expands beyond the 407-character database to find additional matches
+  // We need a confirmed category (not NOT_X) to build meaningful Wikipedia queries
+  const hasPositiveCategory = traits.some(t => 
+    t.key === 'category' && 
+    !t.value.startsWith('NOT_') && 
+    t.confidence >= 0.85
+  )
+  
   let wikipediaNames: string[] = []
-  if (turns.length >= 5 && traits.length >= 2) {
-    console.info('[Detective-RAG] Turn 5+: Fetching supplemental characters from Wikipedia...')
+  if (turns.length >= 5 && hasPositiveCategory) {
+    console.info('[Detective-RAG] Positive category confirmed: Fetching supplemental characters from Wikipedia...')
     try {
       wikipediaNames = await getWikipediaSupplementalCharacters(traits)
       if (wikipediaNames.length > 0) {
@@ -567,6 +574,8 @@ async function askNextQuestion(
     } catch (error) {
       console.warn('[Wikipedia] Failed to fetch supplemental characters:', error)
     }
+  } else if (turns.length >= 5) {
+    console.info('[Detective-RAG] No positive category yet - skipping Wikipedia search')
   }
   
   // If strict filtering returns too few results, use fuzzy matching
