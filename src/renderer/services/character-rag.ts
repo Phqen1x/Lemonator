@@ -188,9 +188,6 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
   if (key === 'fictional') {
     const isFictional = actualValue === 'true' || actualValue === 'yes'
     const matches = isNegative ? char.traits.fictional !== isFictional : char.traits.fictional === isFictional
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: fictional mismatch (has: ${char.traits.fictional}, need: ${isNegative ? 'NOT ' : ''}${isFictional})`)
-    }
     return matches
   }
   
@@ -198,9 +195,6 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
   if (key === 'category' || key === 'occupation_category') {
     const categoryMatches = char.category.toLowerCase().includes(actualValue)
     const matches = isNegative ? !categoryMatches : categoryMatches
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: category mismatch (has: ${char.category}, need: ${isNegative ? 'NOT ' : ''}${actualValue})`)
-    }
     return matches
   }
   
@@ -241,9 +235,6 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     }
 
     const matches = isNegative ? !mediumMatches : mediumMatches
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: origin_medium mismatch (${isNegative ? 'NOT ' : ''}${actualValue})`)
-    }
     return matches
   }
   
@@ -261,9 +252,6 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     }
     
     const matches = isNegative ? !typeMatches : typeMatches
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: tv_show_type mismatch (${isNegative ? 'NOT ' : ''}${actualValue})`)
-    }
     return matches
   }
   
@@ -672,25 +660,21 @@ export function getMostInformativeQuestion(
   for (const {q, test, fictionOnly, realPersonOnly, categoryRequired} of questions) {
     // Skip fiction-only questions if character is confirmed as non-fictional
     if (fictionOnly && isNotFictional) {
-      console.info(`[RAG] Skipping fiction-only question due to logical inference: "${q}"`)
       continue
     }
     
     // Skip real-person-only questions if character is confirmed as fictional
     if (realPersonOnly && isFictional) {
-      console.info(`[RAG] Skipping real-person-only question due to logical inference: "${q}"`)
       continue
     }
     
     // Skip category-specific questions if that category has been ruled out
     if (categoryRequired && ruledOutCategories.has(categoryRequired)) {
-      console.info(`[RAG] Skipping ${categoryRequired} question (category ruled out): "${q}"`)
       continue
     }
     
     // Skip mutually exclusive questions
     if (excludedQuestions.has(q.toLowerCase())) {
-      console.info(`[RAG] Skipping mutually exclusive question: "${q}"`)
       continue
     }
 
@@ -702,7 +686,6 @@ export function getMostInformativeQuestion(
       return regex.test(qLower)
     })
     if (shouldSkipFromTurns) {
-      console.info(`[RAG] Skipping question due to confirmed answer contradiction: "${q}"`)
       continue
     }
 
@@ -744,7 +727,6 @@ export function getMostInformativeQuestion(
       return false
     })
     if (isAlreadyAsked) {
-      console.log(`[RAG] Skipping already-asked or semantically inverse question: "${q}"`)
       continue
     }
     
