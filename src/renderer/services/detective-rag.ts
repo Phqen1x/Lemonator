@@ -483,15 +483,15 @@ async function askNextQuestion(
   console.info('[Detective-RAG] Turn:', turns.length + 1)
 
   // Use RAG to filter candidates based on confirmed traits
-  // Use fuzzy matching first - more forgiving than strict AND filtering
-  // Allows characters that match most (but not all) traits
-  let remainingCandidates = filterCharactersFuzzy(traits, 0.7)
-  console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match with fuzzy threshold 0.7`)
+  // OPTIMIZATION: Try strict filtering first (fast), fall back to fuzzy if needed
+  let remainingCandidates = filterCharactersByTraits(traits)
+  console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match with strict filtering`)
   
-  // If fuzzy matching returns nothing, fall back to strict filtering
-  if (remainingCandidates.length === 0) {
-    remainingCandidates = filterCharactersByTraits(traits)
-    console.info(`[Detective-RAG] Fallback to strict: ${remainingCandidates.length} candidates`)
+  // If strict filtering returns too few results, use fuzzy matching
+  if (remainingCandidates.length === 0 && traits.length > 2) {
+    console.info('[Detective-RAG] Strict filtering found 0 candidates, trying fuzzy matching...')
+    remainingCandidates = filterCharactersFuzzy(traits, 0.7)
+    console.info(`[Detective-RAG] Fuzzy matching (0.7): ${remainingCandidates.length} candidates`)
   }
 
   // CRITICAL: Handle 0 candidates - character not in database
