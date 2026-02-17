@@ -44,6 +44,15 @@ export async function chatCompletion(req: ChatCompletionRequest): Promise<ChatCo
 
 export async function generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResponse> {
   // Use longer timeout for image generation (120 seconds) to allow SDXL-turbo time to generate
+  console.log('[Lemonade] === IMAGE GENERATION REQUEST ===')
+  console.log('[Lemonade] Model:', req.model)
+  console.log('[Lemonade] Steps:', req.steps)
+  console.log('[Lemonade] CFG Scale:', req.cfg_scale)
+  console.log('[Lemonade] Seed:', req.seed)
+  console.log('[Lemonade] Prompt:', req.prompt?.substring(0, 150) + '...')
+  console.log('[Lemonade] Negative:', req.negative_prompt?.substring(0, 150) + '...')
+  console.log('[Lemonade] Full Request Body:', JSON.stringify(req, null, 2))
+  console.log('[Lemonade] ================================')
   return fetchJSON<ImageGenerationResponse>(IMAGE_ENDPOINT, req, 120000)
 }
 

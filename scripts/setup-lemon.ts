@@ -81,8 +81,12 @@ async function generateLemonExpression(expression: LemonExpression, seed: number
   const fullPrompt = `${BASE_PROMPT}, ${expressionPrompt.positive}`
   const fullNegativePrompt = `${BASE_NEGATIVE}, ${expressionPrompt.negative}`
   
-  console.info(`[Lemon] Prompt: ${fullPrompt.substring(0, 120)}...`)
-  console.info(`[Lemon] Negative: ${fullNegativePrompt.substring(0, 80)}...`)
+  console.info(`[Lemon] === FULL PROMPT FOR ${expression.toUpperCase()} ===`)
+  console.info(`[Lemon] Positive Prompt:`)
+  console.info(fullPrompt)
+  console.info(`[Lemon] Negative Prompt:`)
+  console.info(fullNegativePrompt)
+  console.info(`[Lemon] ======================================`)
   
   // Map expressions to very different seed offsets to get diverse results
   const seedOffsets: Record<LemonExpression, number> = {
