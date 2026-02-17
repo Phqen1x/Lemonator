@@ -843,18 +843,18 @@ async function askNextQuestion(
       }
     }
     
-    // Check for other uniquely identifying positions
+    // Check for other uniquely identifying positions with more flexible patterns
     const uniquePositionPatterns = [
-      { role: 'pope', currently: 'currently' },
-      { role: 'dalai lama', currently: 'current' },
-      { role: 'secretary general', currently: 'current' },
-      { role: 'prime minister.*uk', currently: 'current' },
+      { role: /\bpope\b/i, currently: 'currently' },
+      { role: /\bdalai\s+lama\b/i, currently: 'current' },
+      { role: /\bsecretary\s+general\b/i, currently: 'current' },
+      { role: /\bprime\s+minister\b.*\b(uk|united\s+kingdom|british)\b/i, currently: 'current' },
     ]
     
     for (const pattern of uniquePositionPatterns) {
-      const askedAboutRole = askedQuestions.some(q => q.match(new RegExp(pattern.role)))
+      const askedAboutRole = askedQuestions.some(q => pattern.role.test(q))
       const confirmedRole = askedAboutRole && turns.some((t, i) => 
-        askedQuestions[i].match(new RegExp(pattern.role)) &&
+        pattern.role.test(askedQuestions[i]) &&
         (answers[i] === 'yes' || answers[i] === 'true')
       )
       const askedCurrent = askedQuestions.some(q => q.includes(pattern.currently))
@@ -864,7 +864,7 @@ async function askNextQuestion(
       )
       
       if (confirmedRole && confirmedCurrent && hybridGuesses.length > 0) {
-        console.info(`[Detective-RAG] ⚡ LOGICAL DEDUCTION: Current ${pattern.role} = unique identification!`)
+        console.info(`[Detective-RAG] ⚡ LOGICAL DEDUCTION: Current position = unique identification!`)
         console.info('[Detective-RAG] Making immediate guess based on logical uniqueness')
         const topGuess = hybridGuesses[0]
         return {
@@ -1237,10 +1237,17 @@ function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = []): st
   ]
   
   for (const q of FALLBACK_QUESTIONS) {
-    const qLower = q.toLowerCase().trim()
+    const qLower = q.toLowerCase().replace(/[()]/g, '').replace(/\s+/g, ' ').trim()
     
-    // Skip if already asked
-    if (askedLower.includes(qLower)) {
+    // Skip if already asked (using same normalization as duplicate detection)
+    const isAlreadyAsked = askedLower.some(aq => {
+      const normalizedAq = aq.replace(/[()]/g, '').replace(/\s+/g, ' ').trim()
+      return normalizedAq === qLower || 
+             normalizedAq.includes(qLower) || 
+             qLower.includes(normalizedAq)
+    })
+    
+    if (isAlreadyAsked) {
       continue
     }
     

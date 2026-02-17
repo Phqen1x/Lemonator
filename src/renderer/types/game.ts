@@ -1,6 +1,5 @@
 export type GamePhase =
   | 'idle'
-  | 'asking'
   | 'waiting_for_answer'
   | 'processing'
   | 'guessing'

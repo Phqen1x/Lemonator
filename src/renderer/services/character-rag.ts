@@ -694,9 +694,13 @@ export function getMostInformativeQuestion(
       continue
     }
 
-    // Skip questions containing keywords from turn-based mutual exclusivity
+    // Skip questions containing keywords from turn-based mutual exclusivity  
+    // Use word boundary checks to avoid false positives (e.g., "actor" in "action")
     const qLower = q.toLowerCase()
-    const shouldSkipFromTurns = Array.from(skipKeywordsFromTurns).some(kw => qLower.includes(kw))
+    const shouldSkipFromTurns = Array.from(skipKeywordsFromTurns).some(kw => {
+      const regex = new RegExp(`\\b${kw}\\b`, 'i')
+      return regex.test(qLower)
+    })
     if (shouldSkipFromTurns) {
       console.info(`[RAG] Skipping question due to confirmed answer contradiction: "${q}"`)
       continue
@@ -704,26 +708,60 @@ export function getMostInformativeQuestion(
 
     // Skip if already asked (check for similar questions, not just exact)
     const normalizedQ = q.toLowerCase().replace(/[()]/g, '').replace(/\s+/g, ' ').trim()
+    
+    // Semantic inverse detection: "Is your character male?" ↔ "Is your character female?"
+    const semanticInverses: Array<[RegExp, RegExp]> = [
+      [/\bmale\b/, /\bfemale\b/],
+      [/\bfemale\b/, /\bmale\b/],
+      [/\bfictional\b/, /\breal\b/],
+      [/\breal\b/, /\bfictional\b/],
+      [/\balive\b/, /\bdead\b/],
+      [/\bdead\b/, /\balive\b/],
+      [/\bhero\b/, /\bvillain\b/],
+      [/\bvillain\b/, /\bhero\b/],
+    ]
+    
     const isAlreadyAsked = askedQuestions.some(aq => {
       const normalizedAq = aq.toLowerCase().replace(/[()]/g, '').replace(/\s+/g, ' ').trim()
-      // Check if questions are very similar (share most key words)
+      
+      // Check exact match
       if (normalizedAq === normalizedQ) return true
+      
       // Check if questions start the same way (e.g., "Is your character still alive...")
       if (normalizedQ.length > 20 && normalizedAq.startsWith(normalizedQ.slice(0, 25))) return true
       if (normalizedAq.length > 20 && normalizedQ.startsWith(normalizedAq.slice(0, 25))) return true
+      
+      // Check semantic inverses
+      for (const [pattern1, pattern2] of semanticInverses) {
+        if (pattern1.test(normalizedQ) && pattern2.test(normalizedAq)) {
+          // Both questions are about the same topic, just inverted
+          const baseQ = normalizedQ.replace(pattern1, '').trim()
+          const baseAq = normalizedAq.replace(pattern2, '').trim()
+          if (baseQ === baseAq) return true
+        }
+      }
+      
       return false
     })
     if (isAlreadyAsked) {
-      console.log(`[RAG] Skipping already-asked question: "${q}"`)
+      console.log(`[RAG] Skipping already-asked or semantically inverse question: "${q}"`)
       continue
     }
     
     const yesCount = remainingCandidates.filter(test).length
     const noCount = remainingCandidates.length - yesCount
     
-    // Score is deviation from 50/50 split
+    // Use Shannon entropy for information gain (more accurate than absolute deviation)
+    // Entropy = -p*log2(p) - (1-p)*log2(1-p), higher entropy = more information
     const split = yesCount / remainingCandidates.length
-    const score = Math.abs(0.5 - split)
+    
+    // Avoid log(0) errors
+    const p = Math.max(0.001, Math.min(0.999, split))
+    const entropy = -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p))
+    
+    // Higher entropy = better question (closer to 50/50 split)
+    // Convert to score where lower is better for consistency with old code
+    const score = 1 - entropy  // Max entropy is 1.0, so invert
     
     if (score < bestScore) {
       bestScore = score

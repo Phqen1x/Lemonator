@@ -6,7 +6,7 @@ export default function QuestionBubble() {
 
   // Log questions as they're displayed
   useEffect(() => {
-    if (currentQuestion && (phase === 'asking' || phase === 'waiting_for_answer')) {
+    if (currentQuestion && phase === 'waiting_for_answer') {
       // Check if it's a character guess question
       const isCharacterGuess = /^Is your character .+\?$/i.test(currentQuestion) && 
                                !currentQuestion.toLowerCase().includes('from') &&
@@ -22,8 +22,8 @@ export default function QuestionBubble() {
     }
   }, [currentQuestion, phase, turn])
 
-  // Show question during asking and waiting phases
-  if ((phase !== 'asking' && phase !== 'waiting_for_answer') || !currentQuestion) {
+  // Show question during waiting phase
+  if (phase !== 'waiting_for_answer' || !currentQuestion) {
     return null
   }
 
