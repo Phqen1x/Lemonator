@@ -48,11 +48,35 @@ export function useGameLoop() {
     dispatch({ type: 'START_GAME' })
     try {
       const { question, newTraits, topGuesses } = await askDetective([], [], 1, [])
-      dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+      
+      // Check if first question is somehow a guess (very unlikely but handle it)
+      const guessMatch = question.match(/^Is your character (.+)\?$/i)
+      const guessName = guessMatch?.[1]?.trim()
+      const traitKeywords = [
+        'american', 'british', 'male', 'female', 'fictional', 'real', 'an actor', 'an athlete',
+        'a musician', 'a politician', 'a superhero', 'a villain', 'from a', 'from an', 'from the',
+        'known for', 'alive', 'dead', 'still alive', 'well-known', 'famous',
+      ]
+      const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
 
-      const s = stateRef.current
-      // Try to generate image for initial top guess
-      generateImageInBackground(topGuesses, newTraits, 1, s.seed)
+      if (isCharacterGuessQuestion && guessName) {
+        console.log(`[UI] 🎯 Turn 1: GUESS ON FIRST TURN - "${question}" → Guessing: ${guessName}`)
+        dispatch({ type: 'MAKE_GUESS', guess: guessName })
+        const s = stateRef.current
+        const appearanceDetails = buildHeroImagePrompt(guessName, newTraits)
+        renderSimplePortrait(guessName, s.seed, appearanceDetails)
+          .then(heroUrl => {
+            dispatch({ type: 'UPDATE_IMAGE', imageUrl: heroUrl })
+          })
+          .catch(error => {
+            console.warn('[GameLoop] Character render failed:', error)
+          })
+      } else {
+        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+        const s = stateRef.current
+        // Try to generate image for initial top guess
+        generateImageInBackground(topGuesses, newTraits, 1, s.seed)
+      }
     } catch (e) {
       dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Failed to start game' })
     }
@@ -250,7 +274,34 @@ export function useGameLoop() {
         const { question, newTraits, topGuesses } = await askDetective(
           s.traits, turnHistory, s.turn + 1, rejected,
         )
-        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+        
+        // CRITICAL: Check if the new question is also a guess!
+        // This can happen when the AI narrows down to another character after rejection
+        const guessMatch = question.match(/^Is your character (.+)\?$/i)
+        const guessName = guessMatch?.[1]?.trim()
+        const traitKeywords = [
+          'american', 'british', 'male', 'female', 'fictional', 'real', 'an actor', 'an athlete',
+          'a musician', 'a politician', 'a superhero', 'a villain', 'from a', 'from an', 'from the',
+          'known for', 'alive', 'dead', 'still alive', 'well-known', 'famous',
+        ]
+        const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
+
+        if (isCharacterGuessQuestion && guessName) {
+          console.log(`[UI] 🎯 Turn ${s.turn + 1}: GUESS AFTER REJECTION - "${question}" → Guessing: ${guessName}`)
+          dispatch({ type: 'MAKE_GUESS', guess: guessName })
+          
+          // Generate portrait in background
+          const appearanceDetails = buildHeroImagePrompt(guessName, [...s.traits, ...newTraits])
+          renderSimplePortrait(guessName, s.seed, appearanceDetails)
+            .then(heroUrl => {
+              dispatch({ type: 'UPDATE_IMAGE', imageUrl: heroUrl })
+            })
+            .catch(error => {
+              console.warn('[GameLoop] Character render failed:', error)
+            })
+        } else {
+          dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+        }
       } catch (e) {
         dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Detective failed' })
       }
