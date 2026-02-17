@@ -140,8 +140,9 @@ export function useGameLoop() {
 
       // Get fresh merged traits for image generation
       const mergedTraits = [...s.traits, ...newTraits]
-      // Wait for image generation to complete before allowing next question
-      await generateImageInBackground(topGuesses, mergedTraits, s.turn + 1, s.seed)
+      // Generate image in background (non-blocking - don't await)
+      generateImageInBackground(topGuesses, mergedTraits, s.turn + 1, s.seed)
+        .catch(err => console.warn('[GameLoop] Background image generation failed (ignored):', err))
     } catch (e) {
       dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Detective failed' })
     }
