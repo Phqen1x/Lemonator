@@ -330,6 +330,21 @@ export function getMostInformativeQuestion(
       .map(t => t.value.replace('NOT_', ''))
   )
   
+  // Also infer ruled-out categories from remaining candidates
+  // If ALL remaining candidates are NOT in a category, that category is ruled out
+  if (remainingCandidates.length > 0) {
+    const categoriesInCandidates = new Set(remainingCandidates.map(c => c.category))
+    const allPossibleCategories = ['anime', 'superheroes', 'tv-characters', 'actors', 'athletes', 'politicians', 'musicians', 'video-games', 'historical']
+    
+    for (const category of allPossibleCategories) {
+      if (!categoriesInCandidates.has(category)) {
+        ruledOutCategories.add(category)
+      }
+    }
+  }
+  
+  console.log(`[RAG] Ruled out categories:`, Array.from(ruledOutCategories))
+  
   const questions: Array<{q: string, test: (c: CharacterData) => boolean, fictionOnly?: boolean, realPersonOnly?: boolean, categoryRequired?: string}> = [
     { q: 'Is your character fictional?', test: (c: CharacterData) => c.traits.fictional, fictionOnly: false },
     { q: 'Is your character male?', test: (c: CharacterData) => inferGender(c) === 'male', fictionOnly: false },
@@ -451,22 +466,22 @@ export function getMostInformativeQuestion(
       return facts.includes('power') || facts.includes('ability') || facts.includes('superhuman')
     }, fictionOnly: false },
     
-    // Anime
+    // Anime (category-specific questions that require character to be anime category)
     { q: 'Is your character from Dragon Ball?', test: (c: CharacterData) => {
       if (c.category !== 'anime') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('dragon ball')
-    }, fictionOnly: true },
+    }, fictionOnly: true, categoryRequired: 'anime' },
     { q: 'Is your character from Naruto?', test: (c: CharacterData) => {
       if (c.category !== 'anime') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('naruto')
-    }, fictionOnly: true },
+    }, fictionOnly: true, categoryRequired: 'anime' },
     { q: 'Is your character from One Piece?', test: (c: CharacterData) => {
       if (c.category !== 'anime') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('one piece')
-    }, fictionOnly: true },
+    }, fictionOnly: true, categoryRequired: 'anime' },
     { q: 'Is your character a villain or antagonist?', test: (c: CharacterData) => {
       if (c.category !== 'anime' && c.category !== 'superheroes' && c.category !== 'tv-characters') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
