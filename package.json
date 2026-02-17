@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "setup:lemon": "tsx scripts/setup-lemon.ts",
     "test:integration": "tsx src/tests/integration-test.ts",
     "test:quick": "tsx src/tests/integration-test.ts --games=5",
     "test:medium": "tsx src/tests/integration-test.ts --games=10",
