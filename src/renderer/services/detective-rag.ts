@@ -1005,6 +1005,12 @@ async function askNextQuestion(
     }
   }
 
+  if (contradictionRules.length > 0) {
+    console.log('[Detective-RAG] Contradiction rules generated:', contradictionRules)
+  } else {
+    console.log('[Detective-RAG] No contradiction rules (confirmed answers:', confirmedAnswers, ')')
+  }
+
   const contradictionGuidance = contradictionRules.length > 0
     ? `\n\n**CONTRADICTIONS TO AVOID (based on confirmed answers):**\n${contradictionRules.join('\n')}`
     : ''
