@@ -285,7 +285,8 @@ async function extractTraits(
   question: string,
   answer: AnswerValue,
   turnAdded: number,
-  validTraitKeys?: string[]
+  validTraitKeys?: string[],
+  existingTraits?: Trait[]
 ): Promise<Trait[]> {
   if (answer === 'dont_know') {
     console.warn('[Detective-RAG] User answered "dont_know", skipping trait extraction')
@@ -297,11 +298,25 @@ async function extractTraits(
     contextualHint = `\n\nVALID TRAIT KEYS (only use these): ${validTraitKeys.join(', ')}`
   }
 
+  // Add existing traits context to prevent contradictions
+  let existingTraitsContext = ''
+  if (existingTraits && existingTraits.length > 0) {
+    const traitsList = existingTraits
+      .map(t => `${t.key}=${t.value}`)
+      .join(', ')
+    existingTraitsContext = `\n\nEXISTING TRAITS (DO NOT contradict these): ${traitsList}
+
+CRITICAL: If the new answer contradicts existing traits, return an empty array []. For example:
+- If category=actors exists, DO NOT extract category=NOT_actors
+- If gender=male exists, DO NOT extract gender=female
+- If fictional=true exists, DO NOT extract fictional=false`
+  }
+
   const prompt = `Question: "${question}"
 Answer: "${ANSWER_LABELS[answer]}"
 
 CRITICAL: Match the question topic precisely. Don't infer unrelated traits.
-Extract trait(s) as a JSON array.${contextualHint}`
+Extract trait(s) as a JSON array.${contextualHint}${existingTraitsContext}`
 
   try {
     const response = await chatCompletion({
@@ -1356,7 +1371,7 @@ export async function askDetective(
       // Regular question - extract traits (can be multiple!)
       console.info('[Detective-RAG] Extracting traits from Q&A...')
       const validTraitKeys = ['category', 'fictional', 'gender', 'origin_medium', 'has_powers', 'alignment', 'species', 'age_group', 'era', 'tv_show_type', 'publisher', 'nationality']
-      const extractedTraits = await extractTraits(questionToAnalyze, answerToAnalyze, turnAdded, validTraitKeys)
+      const extractedTraits = await extractTraits(questionToAnalyze, answerToAnalyze, turnAdded, validTraitKeys, traits)
       if (extractedTraits.length > 0) {
         newTraits.push(...extractedTraits)
         console.info(`[Detective-RAG] ✓ Extracted ${extractedTraits.length} trait(s):`, 
