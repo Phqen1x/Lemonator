@@ -19,28 +19,28 @@ type ExpressionPrompt = {
 
 const EXPRESSION_PROMPTS: Record<LemonExpression, ExpressionPrompt> = {
   neutral: {
-    positive: 'NEUTRAL EXPRESSION, simple dot eyes, straight horizontal line mouth, completely blank emotionless face, standing still',
-    negative: 'frowning, sad, angry, crying, extreme emotions, laughing, smiling, grinning, happy, cheerful',
+    positive: 'COMPLETELY NEUTRAL, simple black dot eyes, perfectly straight horizontal line for mouth NO CURVE, standing still, ZERO emotion, robotic blank stare',
+    negative: 'frowning, sad, angry, crying, laughing, smiling, grinning, happy, cheerful, any emotion, curved mouth, upturned lips',
   },
   yes: {
-    positive: 'EXTREMELY HAPPY EXCITED JOYFUL, HUGE WIDE GRIN ear to ear, eyes wide open and sparkling, both arms raised HIGH above head in celebration, jumping, pure ecstatic happiness',
-    negative: 'sad, frowning, crying, disappointed, neutral, calm, serious, tired',
+    positive: 'EXTREMELY HAPPY, MASSIVE GRIN WITH MOUTH CURVED UPWARD, eyes wide open sparkling, both arms raised HIGH above head waving, jumping off ground, pure joy',
+    negative: 'sad, frowning, crying, disappointed, neutral, calm, serious, tired, straight mouth',
   },
   no: {
-    positive: 'SAD DISAPPOINTED face with visible eyes and mouth, LARGE DOWNTURNED FROWN mouth, sad droopy eyes with single tear drop on cheek, arms hanging down at sides looking dejected, shoulders slumped',
-    negative: 'smiling, happy, grinning, cheerful, laughing, positive, excited, neutral, no face, featureless',
+    positive: 'SAD FROWNING UPSET, MOUTH CURVED DOWNWARD IN FROWN, eyebrows angled down, single tear, arms at sides drooping, head tilted down, NO SMILING AT ALL',
+    negative: 'smiling, grinning, happy, cheerful, laughing, positive, excited, upturned mouth, curved up lips, any smile',
   },
   probably: {
-    positive: 'THOUGHTFUL PONDERING expression, one hand on chin, slight OPTIMISTIC SMILE, one eyebrow raised slightly, eyes looking upward thinking, considering possibilities, hopeful but uncertain',
-    negative: 'laughing, big grin, sad, crying, very confused, angry, frowning, negative',
+    positive: 'THINKING HARD, one finger on chin, small UPWARD CURVED SMILE showing optimism, one eyebrow raised, eyes looking up, considering',
+    negative: 'laughing, huge grin, sad, crying, very confused, angry, deep frown, neutral face',
   },
   probably_not: {
-    positive: 'SKEPTICAL DOUBTFUL SUSPICIOUS face, both eyebrows FURROWED DOWN, DEEP FROWN mouth, arms CROSSED tightly, eyes narrowed in distrust, head tilted to side in disbelief, very dubious',
-    negative: 'smiling, happy, enthusiastic, excited, laughing, cheerful, grinning, positive',
+    positive: 'SKEPTICAL FROWNING, MOUTH CURVED DOWNWARD, both eyebrows DOWN and inward, arms CROSSED, squinting eyes, head shaking NO, distrustful scowl, NO SMILE',
+    negative: 'smiling, grinning, happy, laughing, cheerful, positive, upturned mouth, curved up lips, any smile whatsoever',
   },
   dont_know: {
-    positive: 'VERY CONFUSED BEWILDERED, both hands on head scratching, eyes CROSSED looking at each other, mouth in wide O shape, SHRUGGING shoulders up high, question mark floating near head, completely baffled perplexed',
-    negative: 'smiling, happy, confident, certain, sad crying, angry, cheerful, grinning, laughing',
+    positive: 'CONFUSED BEWILDERED, eyes looking DIFFERENT DIRECTIONS crossed, mouth open WIDE in O shape, both hands on sides of head, shoulders SHRUGGED UP, question mark above head, NO SMILE JUST CONFUSION',
+    negative: 'smiling, happy, confident, certain, laughing, cheerful, grinning, upturned mouth, any smile, content',
   },
 }
 
@@ -104,7 +104,7 @@ async function generateLemonExpression(expression: LemonExpression, seed: number
       negative_prompt: fullNegativePrompt,
       seed: finalSeed,
       steps: 4, // SDXL-turbo optimal: 1-4 steps
-      cfg_scale: 1.0, // SDXL-turbo optimal: 0-2, using 1.0 for best quality
+      cfg_scale: 1.5, // Increased from 1.0 to 1.5 for better prompt adherence
       width: 512,
       height: 512,
     })
