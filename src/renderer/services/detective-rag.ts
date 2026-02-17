@@ -1111,6 +1111,26 @@ async function askNextQuestion(
   const traitsList = traits.map(t => `- ${t.key}: ${t.value} (${Math.round(t.confidence * 100)}%)`).join('\n')
   const turnsList = turns.map((t, i) => `${i + 1}. Q: "${t.question}" A: ${t.answer}`).join('\n')
 
+  // Check which categorical questions have been asked
+  const askedQuestionsLower = turns.map(t => t.question.toLowerCase())
+  const categoryQuestionMap: Record<string, string[]> = {
+    'actors': ['actor', 'actress', 'acting', 'acted', 'perform', 'film', 'movie'],
+    'musicians': ['musician', 'singer', 'band', 'music', 'song'],
+    'athletes': ['athlete', 'sport', 'play', 'team'],
+    'politicians': ['politician', 'president', 'politics', 'office', 'govern'],
+    'scientists': ['scientist', 'science', 'research', 'discover'],
+    'writers': ['writer', 'author', 'wrote', 'book', 'novel'],
+  }
+  
+  const askedCategories = new Set<string>()
+  for (const [category, keywords] of Object.entries(categoryQuestionMap)) {
+    if (askedQuestionsLower.some(q => keywords.some(kw => q.includes(kw)))) {
+      askedCategories.add(category)
+    }
+  }
+  
+  console.log('[Detective-RAG] Asked categories:', Array.from(askedCategories))
+
   // Check if category is confirmed (positive category trait exists)
   const confirmedCategory = traits.find(t => 
     t.key === 'category' && 
@@ -1155,6 +1175,22 @@ async function askNextQuestion(
       }
     }
   }
+  
+  // FICTIONALITY LOGIC: Add contradiction rules based on fictional status
+  const fictionalTrait = traits.find(t => t.key === 'fictional')
+  if (fictionalTrait && fictionalTrait.value === 'false' && fictionalTrait.confidence >= 0.85) {
+    contradictionRules.push(
+      `Character is REAL (not fictional) — do NOT ask about: Marvel, DC Comics, anime, manga, video games, TV shows (as origin), movie characters, book characters, comics`
+    )
+    console.log('[Detective-RAG] Added fictionality rule: Character is real → no fictional origins')
+  } else if (fictionalTrait && fictionalTrait.value === 'true' && fictionalTrait.confidence >= 0.85) {
+    const originMediums = traits.filter(t => t.key === 'origin_medium' && !t.value.startsWith('NOT_'))
+    if (originMediums.length > 0) {
+      contradictionRules.push(
+        `Character is from ${originMediums[0].value} — focus on questions about this origin`
+      )
+    }
+  }
 
   if (contradictionRules.length > 0) {
     console.log('[Detective-RAG] Contradiction rules generated:', contradictionRules)
@@ -1171,12 +1207,25 @@ async function askNextQuestion(
 DO NOT ask about other categories (actor/athlete/musician/politician/etc.) unless absolutely necessary.
 Focus on discriminating questions within this category (era, specific works, characteristics, teams).`
     : ''
+  
+  // Build prerequisite guidance - don't ask specific questions before broader category questions
+  const prerequisiteGuidance = !confirmedCategory && askedCategories.size === 0
+    ? `\n\n**QUESTION HIERARCHY:** 
+You have NOT yet asked about any broad categories (actor, musician, athlete, etc.).
+DO NOT ask specific questions like "Was your character active in movies before 2000s?" or "Does your character play basketball?"
+First determine the BROAD category, then ask specific questions within that category.
+
+Examples of what NOT to ask yet:
+- "Was your character active in movies before the 2000s?" (ask "Is your character an actor?" first)
+- "Does your character play basketball?" (ask "Is your character an athlete?" first)
+- "Did your character win a Grammy?" (ask "Is your character a musician?" first)`
+    : ''
 
   const contextPrompt = `
 **Current Game State:**
 Turn: ${turns.length + 1}
 Confirmed traits:
-${traitsList || '(none yet)'}${categoryGuidance}${contradictionGuidance}
+${traitsList || '(none yet)'}${categoryGuidance}${prerequisiteGuidance}${contradictionGuidance}
 
 **Previous Q&A:**
 ${turnsList || '(no questions yet)'}
@@ -1484,6 +1533,61 @@ export async function askDetective(
         console.warn('[Detective-RAG] ✗ No traits extracted from answer')
       }
     }
+  }
+
+  // LOGICAL DEDUCTION: Fictionality implications
+  // If character is NOT fictional (real person), they CANNOT be from fictional origins
+  const allTraits = [...traits, ...newTraits]
+  const fictionalTrait = allTraits.find(t => t.key === 'fictional')
+  
+  if (fictionalTrait && fictionalTrait.value === 'false' && fictionalTrait.confidence >= 0.85) {
+    console.info('[Detective-RAG] 💡 LOGICAL DEDUCTION: Character is real → ruling out fictional origins')
+    
+    // Real people cannot be from these fictional origins
+    const impossibleOrigins = [
+      'marvel', 'dc', 'anime', 'manga', 'video-game', 'tv-show', 
+      'movie-character', 'book-character', 'comic'
+    ]
+    
+    // Add NOT_X traits for each impossible origin if not already present
+    for (const origin of impossibleOrigins) {
+      const alreadyHasNegation = allTraits.some(t => 
+        t.key === 'origin_medium' && t.value === `NOT_${origin}`
+      )
+      const alreadyHasPositive = allTraits.some(t =>
+        t.key === 'origin_medium' && t.value === origin
+      )
+      
+      if (!alreadyHasNegation && !alreadyHasPositive) {
+        const deducedTrait: Trait & TurnAdded = {
+          key: 'origin_medium',
+          value: `NOT_${origin}`,
+          confidence: 0.95,
+          turnAdded: turnAdded
+        }
+        newTraits.push(deducedTrait)
+        console.info(`[Detective-RAG]   → Deduced: origin_medium=NOT_${origin} (real person can't be from ${origin})`)
+      }
+    }
+  }
+  
+  // LOGICAL DEDUCTION: Origin medium implications
+  // If character IS from a fictional origin, they must be fictional
+  const originMediumTraits = allTraits.filter(t => t.key === 'origin_medium' && !t.value.startsWith('NOT_'))
+  const hasFictionalOrigin = originMediumTraits.some(t => 
+    ['marvel', 'dc', 'anime', 'manga', 'video-game', 'tv-show', 'movie-character', 'book-character', 'comic'].includes(t.value)
+  )
+  
+  if (hasFictionalOrigin && !fictionalTrait) {
+    console.info('[Detective-RAG] 💡 LOGICAL DEDUCTION: Character from fictional origin → must be fictional')
+    const deducedTrait: Trait & TurnAdded = {
+      key: 'fictional',
+      value: 'true',
+      confidence: 0.95,
+      turnAdded: turnAdded
+    }
+    newTraits.push(deducedTrait)
+    console.info(`[Detective-RAG]   → Deduced: fictional=true (from ${originMediumTraits[0].value})`)
   }
 
   // Step 2: Get next question with updated traits
