@@ -314,7 +314,8 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
 export function getMostInformativeQuestion(
   remainingCandidates: CharacterData[],
   askedQuestions: string[],
-  confirmedTraits: Trait[] = []
+  confirmedTraits: Trait[] = [],
+  turns?: Array<{question: string, answer: string}>
 ): string | null {
   if (remainingCandidates.length === 0) return null
   if (remainingCandidates.length === 1) return null // Ready to guess
@@ -585,6 +586,49 @@ export function getMostInformativeQuestion(
     excludedQuestions.add('is your character from a sitcom?')
     excludedQuestions.add('is your character from a drama series?')
   }
+
+  // Build mutual exclusivity rules from turn history (for nationality, sports, music genres, etc.)
+  const skipKeywordsFromTurns = new Set<string>()
+  if (turns) {
+    const confirmedAnswers = turns
+      .filter(t => t.answer === 'yes' || t.answer === 'probably')
+      .map(t => t.question.toLowerCase())
+    
+    const subCategoryConflicts: Record<string, string[]> = {
+      // Nationality/geography (mutually exclusive for most characters)
+      'american': ['british', 'uk', 'united kingdom', 'european', 'europe', 'from europe', 'from the uk', 'from the united kingdom'],
+      'british': ['american', 'usa', 'united states', 'from america'],
+      'uk': ['american', 'usa', 'united states', 'from america'],
+      'united kingdom': ['american', 'usa', 'united states', 'from america'],
+      'europe': ['american', 'usa', 'united states', 'from america'],
+      'european': ['american', 'usa', 'united states', 'from america'],
+      // Sports
+      'basketball': ['soccer', 'football', 'baseball', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'soccer': ['basketball', 'baseball', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'football': ['basketball', 'baseball', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'baseball': ['basketball', 'soccer', 'football', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      // Music genres
+      'rapper': ['rock', 'pop', 'country', 'classical'],
+      'rock': ['rapper', 'hip-hop', 'pop', 'country', 'classical'],
+      'pop': ['rapper', 'hip-hop', 'rock', 'country', 'classical'],
+      // Comic publishers
+      'dc': ['marvel'],
+      'marvel': ['dc'],
+      // Anime series
+      'dragon ball': ['naruto', 'one piece'],
+      'naruto': ['dragon ball', 'one piece'],
+      'one piece': ['dragon ball', 'naruto'],
+    }
+
+    for (const confirmedQ of confirmedAnswers) {
+      for (const [keyword, conflicts] of Object.entries(subCategoryConflicts)) {
+        if (confirmedQ.includes(keyword)) {
+          conflicts.forEach(conflict => skipKeywordsFromTurns.add(conflict))
+          console.log(`[RAG] Confirmed "${keyword}" → excluding questions about: ${conflicts.join(', ')}`)
+        }
+      }
+    }
+  }
   
   for (const {q, test, fictionOnly, realPersonOnly, categoryRequired} of questions) {
     // Skip fiction-only questions if character is confirmed as non-fictional
@@ -608,6 +652,14 @@ export function getMostInformativeQuestion(
     // Skip mutually exclusive questions
     if (excludedQuestions.has(q.toLowerCase())) {
       console.info(`[RAG] Skipping mutually exclusive question: "${q}"`)
+      continue
+    }
+
+    // Skip questions containing keywords from turn-based mutual exclusivity
+    const qLower = q.toLowerCase()
+    const shouldSkipFromTurns = Array.from(skipKeywordsFromTurns).some(kw => qLower.includes(kw))
+    if (shouldSkipFromTurns) {
+      console.info(`[RAG] Skipping question due to confirmed answer contradiction: "${q}"`)
       continue
     }
 

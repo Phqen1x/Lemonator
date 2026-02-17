@@ -527,7 +527,8 @@ async function askNextQuestion(
         const strategicQuestion = getMostInformativeQuestion(
           relaxedCandidates,
           turns.map(t => t.question),
-          traits  // Pass traits for logical inference
+          traits,  // Pass traits for logical inference
+          turns    // Pass full turn history for contradiction detection
         )
         
         if (strategicQuestion) {
@@ -879,7 +880,8 @@ async function askNextQuestion(
   const strategicQuestion = getMostInformativeQuestion(
     remainingCandidates,
     turns.map(t => t.question),
-    traits  // Pass traits for logical inference
+    traits,  // Pass traits for logical inference
+    turns    // Pass full turn history for contradiction detection
   )
 
   if (strategicQuestion && remainingCandidates.length > 10) {
