@@ -1,0 +1,141 @@
+import { useCallback, useRef } from 'react'
+import { useGameState, useGameDispatch } from '../context/GameContext'
+import { askDetective, recordRejectedGuess, recordAmbiguousQuestion, resetSessionLearning } from '../services/detective-rag'
+import { buildImagePrompt } from '../services/visualist'
+import { renderImage, renderHeroImage } from '../services/artist'
+import { CONFIDENCE_THRESHOLD, ENABLE_IMAGE_GENERATION } from '../../shared/constants'
+import type { AnswerValue, Trait } from '../types/game'
+
+export function useGameLoop() {
+  const state = useGameState()
+  const dispatch = useGameDispatch()
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  const generateImageInBackground = useCallback((traits: Trait[], turn: number, seed: number) => {
+    if (!ENABLE_IMAGE_GENERATION) {
+      console.info('[GameLoop] Image generation disabled')
+      return
+    }
+    ;(async () => {
+      try {
+        const prompt = buildImagePrompt(traits, turn)
+        const imageUrl = await renderImage(prompt, seed, turn)
+        dispatch({ type: 'UPDATE_IMAGE', imageUrl })
+      } catch (e) {
+        console.warn('Image generation failed:', e)
+      }
+    })()
+  }, [dispatch])
+
+  const startGame = useCallback(async () => {
+    resetSessionLearning() // Reset learning for new game
+    dispatch({ type: 'START_GAME' })
+    try {
+      const { question, newTraits, topGuesses } = await askDetective([], [], 1, [])
+      dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+
+      const s = stateRef.current
+      generateImageInBackground(newTraits, 0, s.seed)
+    } catch (e) {
+      dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Failed to start game' })
+    }
+  }, [dispatch, generateImageInBackground])
+
+  const submitAnswer = useCallback(async (answer: AnswerValue) => {
+    const s = stateRef.current
+    dispatch({ type: 'SUBMIT_ANSWER', answer })
+
+    // Track ambiguous questions (user doesn't know the answer)
+    if (answer === 'dont_know' && s.currentQuestion) {
+      recordAmbiguousQuestion(s.currentQuestion, s.turn)
+    }
+
+    try {
+      const turnHistory = [
+        ...s.turns.map(t => ({ question: t.question, answer: t.answer })),
+      ]
+      if (s.currentQuestion) {
+        turnHistory.push({ question: s.currentQuestion, answer })
+      }
+
+      const { question, newTraits, topGuesses } = await askDetective(
+        s.traits,
+        turnHistory,
+        s.turn + 1,
+        s.rejectedGuesses,
+        s.currentQuestion || undefined,  // ✅ ADD: previous question (convert null to undefined)
+        answer                            // ✅ ADD: user's answer
+      )
+
+      // Log UI state updates
+      if (newTraits.length > 0) {
+        console.log(`[UI] ✅ Turn ${s.turn + 1}: Added ${newTraits.length} new trait(s):`)
+        newTraits.forEach(t => {
+          console.log(`[UI]   - ${t.key} = ${t.value} (confidence: ${Math.round(t.confidence * 100)}%)`)
+        })
+      }
+
+      const topGuess = topGuesses[0]
+      if (topGuess && topGuess.confidence >= CONFIDENCE_THRESHOLD) {
+        console.log(`[UI] 🎯 Turn ${s.turn + 1}: HIGH CONFIDENCE GUESS - ${topGuess.name} (${Math.round(topGuess.confidence * 100)}%)`)
+        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+        dispatch({ type: 'MAKE_GUESS', guess: topGuess.name })
+        return
+      }
+
+      dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+
+      const allTraits = [...s.traits, ...newTraits]
+      generateImageInBackground(allTraits, s.turn + 1, s.seed)
+    } catch (e) {
+      dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Detective failed' })
+    }
+  }, [dispatch, generateImageInBackground])
+
+  const confirmGuess = useCallback(async (correct: boolean) => {
+    const s = stateRef.current
+    dispatch({ type: 'CONFIRM_GUESS', correct })
+
+    if (correct) {
+      if (!ENABLE_IMAGE_GENERATION) {
+        console.info('[GameLoop] Hero image generation disabled')
+        dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: '' })
+      } else {
+        try {
+          const prompt = buildImagePrompt(s.traits, 20)
+          const heroUrl = await renderHeroImage(prompt, s.seed)
+          dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: heroUrl })
+        } catch {
+          dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: s.currentImageUrl || '' })
+        }
+      }
+    } else {
+      // Record rejection for learning
+      if (s.finalGuess) {
+        recordRejectedGuess(s.finalGuess, s.traits, s.turn)
+      }
+      
+      // After rejection, rejectedGuesses is updated in reducer
+      const rejected = s.finalGuess
+        ? [...s.rejectedGuesses, s.finalGuess]
+        : s.rejectedGuesses
+      try {
+        const turnHistory = s.turns.map(t => ({ question: t.question, answer: t.answer }))
+        const { question, newTraits, topGuesses } = await askDetective(
+          s.traits, turnHistory, s.turn + 1, rejected,
+        )
+        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+      } catch (e) {
+        dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Detective failed' })
+      }
+    }
+  }, [dispatch, generateImageInBackground])
+
+  const resetGame = useCallback(() => {
+    resetSessionLearning() // Reset learning for new game
+    dispatch({ type: 'RESET' })
+  }, [dispatch])
+
+  return { startGame, submitAnswer, confirmGuess, resetGame }
+}

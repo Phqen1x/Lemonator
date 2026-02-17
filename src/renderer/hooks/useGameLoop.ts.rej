@@ -1,0 +1,31 @@
+--- src/renderer/hooks/useGameLoop.ts
++++ src/renderer/hooks/useGameLoop.ts
+@@ -67,21 +70,19 @@ export function useGameLoop() {
+         turnHistory,
+         s.turn + 1,
+         s.rejectedGuesses,
+-        s.currentQuestion || undefined,  // ✅ ADD: previous question (convert null to undefined)
+-        answer                            // ✅ ADD: user's answer
++        s.currentQuestion || undefined,  // previous question (convert null to undefined)
++        answer                            // user's answer
+       )
+ 
+-      const topGuess = topGuesses[0]
+-      if (topGuess && topGuess.confidence >= CONFIDENCE_THRESHOLD) {
+-        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+-        dispatch({ type: 'MAKE_GUESS', guess: topGuess.name })
+-        return
+-      }
+-
+       dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+ 
+       const allTraits = [...s.traits, ...newTraits]
+       generateImageInBackground(allTraits, s.turn + 1, s.seed)
++
++      const topGuess = topGuesses[0]
++      if (topGuess && topGuess.confidence >= CONFIDENCE_THRESHOLD) {
++        dispatch({ type: 'MAKE_GUESS', guess: topGuess.name })
++      }
+     } catch (e) {
+       dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Detective failed' })
+     }
