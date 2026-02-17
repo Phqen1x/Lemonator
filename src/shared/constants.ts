@@ -9,13 +9,16 @@ export const HEALTH_ENDPOINT = `${LEMONADE_BASE_URL}/v1/models`
 export const DETECTIVE_MODEL = 'Qwen3-4B-Instruct-2507-GGUF'
 //export const DETECTIVE_MODEL = 'Qwen2.5-Coder-32B-Instruct-GGUF' // Not available on this system
 export const VISUALIST_MODEL = 'Phi-4-mini-instruct-GGUF'
+// SDXL-Turbo is too slow on CPU (hours per image)
+// Image generation disabled until GPU acceleration is configured
 export const IMAGE_MODEL = 'SDXL-Turbo'
 
 export const CONFIDENCE_THRESHOLD = 0.95  // Lower for RAG (10 guess target)
 export const MAX_TURNS = 100  // Allow extensive questioning to narrow down
 
 // Set to false to disable image generation during detective testing
-export const ENABLE_IMAGE_GENERATION = true
+// DISABLED: Lemonade image generation takes 180+ seconds and times out
+export const ENABLE_IMAGE_GENERATION = false
 
 // Set to true to use LLM-based visualist (Phi-4-mini) instead of pure function
 // When false, falls back to buildImagePrompt() for A/B testing

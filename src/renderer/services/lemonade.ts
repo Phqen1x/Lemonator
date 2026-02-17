@@ -1,7 +1,7 @@
 import { CHAT_ENDPOINT, IMAGE_ENDPOINT, HEALTH_ENDPOINT } from '../../shared/constants'
 import type { ChatCompletionRequest, ChatCompletionResponse, ImageGenerationRequest, ImageGenerationResponse } from '../types/api'
 
-async function fetchJSON<T>(url: string, body: unknown, timeoutMs = 60000): Promise<T> {
+async function fetchJSON<T>(url: string, body: unknown, timeoutMs = 180000): Promise<T> {
   console.log(`[Lemonade] POST ${url}`)
   
   const controller = new AbortController()

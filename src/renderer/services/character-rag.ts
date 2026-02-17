@@ -319,10 +319,18 @@ export function getMostInformativeQuestion(
   if (remainingCandidates.length === 0) return null
   if (remainingCandidates.length === 1) return null // Ready to guess
   
-  // Check if character is confirmed as non-fictional
+  // Check if character is confirmed as non-fictional or fictional
   const isNotFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'false')
+  const isFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'true')
   
-  const questions = [
+  // Check which categories have been ruled out (NOT_category traits)
+  const ruledOutCategories = new Set(
+    confirmedTraits
+      .filter(t => t.key === 'category' && t.value.startsWith('NOT_'))
+      .map(t => t.value.replace('NOT_', ''))
+  )
+  
+  const questions: Array<{q: string, test: (c: CharacterData) => boolean, fictionOnly?: boolean, realPersonOnly?: boolean, categoryRequired?: string}> = [
     { q: 'Is your character fictional?', test: (c: CharacterData) => c.traits.fictional, fictionOnly: false },
     { q: 'Is your character male?', test: (c: CharacterData) => inferGender(c) === 'male', fictionOnly: false },
     // Fiction-only questions (skip if character is confirmed as non-fictional)
@@ -332,14 +340,14 @@ export function getMostInformativeQuestion(
     { q: 'Is your character from a video game?', test: (c: CharacterData) => c.category === 'video-games', fictionOnly: true },
     { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: false },
     // Real person questions
-    { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false },
-    { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false },
-    { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false },
-    { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false },
+    { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false, realPersonOnly: true },
+    { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false, realPersonOnly: true },
+    { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false, realPersonOnly: true },
+    { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false, realPersonOnly: true },
     { q: 'Is your character a historical figure (died before 1950)?', test: (c: CharacterData) => {
       const facts = c.distinctive_facts.join(' ')
       return /\d{4}–\d{4}/.test(facts) && facts.includes('195') === false && facts.includes('196') === false
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true },
     // Additional broad questions for better splitting
     { q: 'Is your character American?', test: (c: CharacterData) => {
       const facts = c.distinctive_facts.join(' ').toLowerCase()
@@ -365,66 +373,66 @@ export function getMostInformativeQuestion(
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('russia') || facts.includes('britain') || facts.includes('france') || 
              facts.includes('germany') || facts.includes('italy') || facts.includes('europe')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
     { q: 'Was your character a U.S. President?', test: (c: CharacterData) => {
       if (c.category !== 'politicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('president of the united states') || facts.includes('44th president') || facts.includes('45th president')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
     { q: 'Was your character president in the 2000s or later?', test: (c: CharacterData) => {
       if (c.category !== 'politicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('2000') || facts.includes('2010') || facts.includes('2020') || 
              facts.includes('obama') || facts.includes('trump') || facts.includes('biden')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
     { q: 'Was your character president before 2000?', test: (c: CharacterData) => {
       if (c.category !== 'politicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('198') || facts.includes('199') || facts.includes('197') ||
              facts.includes('clinton') || facts.includes('reagan') || facts.includes('bush')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
     { q: 'Is your character currently in office (as of 2026)?', test: (c: CharacterData) => {
       if (c.category !== 'politicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       const name = c.name.toLowerCase()
       // Biden is current president in 2026
       return name.includes('biden')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
     
     // Athletes
     { q: 'Is your character a basketball player?', test: (c: CharacterData) => {
       if (c.category !== 'athletes') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('basketball') || facts.includes('nba')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'athletes' },
     { q: 'Is your character a soccer/football player?', test: (c: CharacterData) => {
       if (c.category !== 'athletes') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('soccer') || facts.includes('football') || facts.includes('fifa')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'athletes' },
     { q: 'Is your character a baseball player?', test: (c: CharacterData) => {
       if (c.category !== 'athletes') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('baseball') || facts.includes('mlb')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'athletes' },
     { q: 'Is your character a combat sports athlete (boxing, MMA, wrestling)?', test: (c: CharacterData) => {
       if (c.category !== 'athletes') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('boxing') || facts.includes('mma') || facts.includes('ufc') || 
              facts.includes('wrestling') || facts.includes('fighter') || facts.includes('martial arts')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'athletes' },
     
     // Actors
     { q: 'Is your character from the United Kingdom?', test: (c: CharacterData) => {
       if (c.category !== 'actors') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('british') || facts.includes('english') || facts.includes('uk')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     { q: 'Did your character act in the Marvel Cinematic Universe?', test: (c: CharacterData) => {
       if (c.category !== 'actors') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('marvel') || facts.includes('iron man') || facts.includes('avengers') || facts.includes('mcu')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     
     // Superheroes
     { q: 'Is your character from DC Comics?', test: (c: CharacterData) => {
@@ -471,44 +479,44 @@ export function getMostInformativeQuestion(
       if (c.category !== 'musicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('rapper') || facts.includes('hip hop') || facts.includes('hip-hop')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
     { q: 'Is your character in a band?', test: (c: CharacterData) => {
       if (c.category !== 'musicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('band') || facts.includes('beatles') || facts.includes('led zeppelin')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
     { q: 'Is your character a rock musician?', test: (c: CharacterData) => {
       if (c.category !== 'musicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('rock') || facts.includes('guitar') 
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
     { q: 'Is your character a pop singer?', test: (c: CharacterData) => {
       if (c.category !== 'musicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('pop') && !facts.includes('hip hop') && !facts.includes('rock')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
     { q: 'Was your character popular in the 1960s-1980s?', test: (c: CharacterData) => {
       if (c.category !== 'musicians') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('196') || facts.includes('197') || facts.includes('198')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
     
     // Actors
     { q: 'Has your character won an Oscar?', test: (c: CharacterData) => {
       if (c.category !== 'actors') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('oscar') || facts.includes('academy award')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     { q: 'Is your character primarily known for action movies?', test: (c: CharacterData) => {
       if (c.category !== 'actors') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('action') || facts.includes('martial arts')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     { q: 'Was your character active in movies before 2000?', test: (c: CharacterData) => {
       if (c.category !== 'actors') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('198') || facts.includes('199')
-    }, fictionOnly: false },
+    }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     
     // TV Characters  
     { q: 'Is your character from a sitcom?', test: (c: CharacterData) => {
@@ -533,10 +541,24 @@ export function getMostInformativeQuestion(
   let bestQuestion: string | null = null
   let bestScore = Infinity
   
-  for (const {q, test, fictionOnly} of questions) {
+  console.log(`[RAG] getMostInformativeQuestion called with ${askedQuestions.length} previously asked questions`)
+  
+  for (const {q, test, fictionOnly, realPersonOnly, categoryRequired} of questions) {
     // Skip fiction-only questions if character is confirmed as non-fictional
     if (fictionOnly && isNotFictional) {
       console.info(`[RAG] Skipping fiction-only question due to logical inference: "${q}"`)
+      continue
+    }
+    
+    // Skip real-person-only questions if character is confirmed as fictional
+    if (realPersonOnly && isFictional) {
+      console.info(`[RAG] Skipping real-person-only question due to logical inference: "${q}"`)
+      continue
+    }
+    
+    // Skip category-specific questions if that category has been ruled out
+    if (categoryRequired && ruledOutCategories.has(categoryRequired)) {
+      console.info(`[RAG] Skipping ${categoryRequired} question (category ruled out): "${q}"`)
       continue
     }
     
@@ -551,7 +573,10 @@ export function getMostInformativeQuestion(
       if (normalizedAq.length > 20 && normalizedQ.startsWith(normalizedAq.slice(0, 25))) return true
       return false
     })
-    if (isAlreadyAsked) continue
+    if (isAlreadyAsked) {
+      console.log(`[RAG] Skipping already-asked question: "${q}"`)
+      continue
+    }
     
     const yesCount = remainingCandidates.filter(test).length
     const noCount = remainingCandidates.length - yesCount
@@ -659,12 +684,18 @@ export function getTopGuesses(
       prominenceBonus += 0.02 // High prominence
     }
     
-    // Small random variance to break ties (1-2% max)
-    const randomTiebreaker = (Math.random() * 0.02)
+    // Deterministic tiebreaker based on name (prevents random shuffling between calls)
+    // Use character name hash to create consistent ordering
+    let nameHash = 0
+    for (let i = 0; i < char.name.length; i++) {
+      nameHash = ((nameHash << 5) - nameHash) + char.name.charCodeAt(i)
+      nameHash |= 0 // Convert to 32-bit integer
+    }
+    const deterministicTiebreaker = (Math.abs(nameHash) % 100) / 10000 // 0-0.01 range
     
     // Calculate final confidence
     const confidence = Math.min(
-      baseConfidence + matchBonus + specificityBonus + candidatePoolBonus + prominenceBonus + randomTiebreaker,
+      baseConfidence + matchBonus + specificityBonus + candidatePoolBonus + prominenceBonus + deterministicTiebreaker,
       0.90 // Cap at 90% (never be 100% certain)
     )
     

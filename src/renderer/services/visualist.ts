@@ -1,4 +1,5 @@
 import type { Trait } from '../types/game'
+import { buildAppearancePrompt, hasAppearanceData } from './character-appearance'
 
 // Visual trait keys that directly translate to image descriptors
 const VISUAL_KEYS = new Set([
@@ -60,33 +61,58 @@ function traitToDescriptor(trait: Trait): string | null {
   }
 }
 
-const BASE_EARLY = 'digital painting, character portrait, mysterious silhouette, soft glow, neutral dark background, concept art'
-const BASE_MID = 'digital painting, character portrait, professional concept art, detailed features'
-const BASE_LATE = 'digital painting, character portrait, professional concept art, highly detailed, sharp focus, dramatic lighting'
-
-export function buildImagePrompt(traits: Trait[], turn: number): string {
-  // Determine detail level based on turn
-  let base: string
-  if (turn <= 3) base = BASE_EARLY
-  else if (turn <= 8) base = BASE_MID
-  else base = BASE_LATE
-
-  // Convert confirmed traits to visual descriptors
-  // Filter out NOT_ exclusion traits and non-visual traits first
+/**
+ * Build a hero image prompt when we know the character name
+ * This is ONLY used as supplemental text when we have a reference image
+ */
+export function buildHeroImagePrompt(
+  characterName: string,
+  traits: Trait[]
+): string {
+  // Check if we have detailed appearance data for this character
+  if (hasAppearanceData(characterName)) {
+    const appearanceDetails = buildAppearancePrompt(characterName)
+    console.info('[Visualist] Using detailed appearance data for:', characterName)
+    return appearanceDetails
+  }
+  
+  // Fallback: basic description from traits
+  console.info('[Visualist] No appearance data for:', characterName, '- using traits')
+  
   const descriptors = traits
-    .filter(t => t.confidence >= 0.5 && !t.value.startsWith('NOT_'))
+    .filter(t => t.confidence >= 0.5 && !t.value.startsWith('NOT_') && VISUAL_KEYS.has(t.key))
+    .sort((a, b) => b.confidence - a.confidence)
+    .map(traitToDescriptor)
+    .filter((d): d is string => d !== null)
+  
+  return [...new Set(descriptors)].join(', ')
+}
+
+/**
+ * Build simple image prompt for mid-game turns
+ * Just shows generic placeholder images based on known traits
+ */
+export function buildImagePrompt(
+  traits: Trait[], 
+  turn: number,
+): string {
+  // Convert confirmed traits to visual descriptors
+  const descriptors = traits
+    .filter(t => t.confidence >= 0.5 && !t.value.startsWith('NOT_') && VISUAL_KEYS.has(t.key))
     .sort((a, b) => b.confidence - a.confidence)
     .map(traitToDescriptor)
     .filter((d): d is string => d !== null)
 
-  // Remove duplicates
   const unique = [...new Set(descriptors)]
 
   if (unique.length === 0) {
-    return base
+    return 'mysterious character silhouette, dark background'
   }
 
-  // Combine: base + trait descriptors (keep under ~75 tokens)
-  const traitStr = unique.slice(0, 12).join(', ')
-  return `${base}, ${traitStr}`
+  // Simple generic character image based on traits
+  const traitStr = unique.join(', ')
+  const result = `character portrait, ${traitStr}, simple illustration, neutral background`
+  
+  console.info(`[Visualist] Turn ${turn} simple prompt: ${result}`)
+  return result
 }

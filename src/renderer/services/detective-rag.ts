@@ -537,11 +537,29 @@ async function askNextQuestion(
         'Does your character have magical or mystical abilities?',
       ]
       
-      // Pick a broad question not yet asked
+      // Pick a broad question not yet asked AND logically consistent
       const askedQuestions = turns.map(t => t.question.toLowerCase())
-      const nextBroadQuestion = broadQuestions.find(q => 
-        !askedQuestions.some(asked => asked.includes(q.toLowerCase().slice(0, 20)))
-      )
+      const hasFictionalFalse = traits.some(t => t.key === 'fictional' && t.value === 'false')
+      const hasFictionalTrue = traits.some(t => t.key === 'fictional' && t.value === 'true')
+      
+      const nextBroadQuestion = broadQuestions.find(q => {
+        const qLower = q.toLowerCase()
+        // Skip if already asked
+        if (askedQuestions.some(asked => asked.includes(qLower.slice(0, 20)))) {
+          return false
+        }
+        // Skip "based on real person" if we know they're NOT fictional (i.e., they ARE real)
+        if (qLower.includes('based on a real person') && hasFictionalFalse) {
+          console.info('[Detective-RAG] Skipping "based on real person" - already know character is NOT fictional (i.e., is real)')
+          return false
+        }
+        // Skip "based on real person" if we know they ARE fictional
+        if (qLower.includes('based on a real person') && hasFictionalTrue) {
+          console.info('[Detective-RAG] Skipping "based on real person" - already know character IS fictional')
+          return false
+        }
+        return true
+      })
       
       if (nextBroadQuestion) {
         console.info('[Detective-RAG] Asking broad question:', nextBroadQuestion)
@@ -586,15 +604,18 @@ async function askNextQuestion(
       
       // Add trait-based dynamic questions
       const hasFictional = traits.some(t => t.key === 'fictional')
+      const isFictional = traits.some(t => t.key === 'fictional' && t.value === 'true')
       const isNotFictional = traits.some(t => t.key === 'fictional' && t.value === 'false')
       const hasMale = traits.some(t => t.key === 'gender' && t.value === 'male')
       const hasFemale = traits.some(t => t.key === 'gender' && t.value === 'female')
       
+      // Only ask about fictional if we don't already know
       if (!hasFictional) {
         dynamicQuestions.push('Is your character entirely fictional or based on a real person?')
       }
       
-      if (hasFictional && !isNotFictional) {
+      // Fiction-specific questions (only if confirmed fictional)
+      if (isFictional) {
         dynamicQuestions.push('Does your character appear in multiple different works or adaptations?')
         dynamicQuestions.push('Is your character the main protagonist of their story?')
         dynamicQuestions.push('Does your character have a romantic relationship in their story?')
@@ -716,6 +737,93 @@ async function askNextQuestion(
   // Get context about remaining candidates for the AI
   const candidateContext = getCandidateContext(remainingCandidates, 5)
 
+  // CRITICAL: Detect logically unique trait combinations that identify a single person
+  // Examples:
+  // - "U.S. President" + "currently in office" = only 1 possible person
+  // - "Pope" + "currently in office" = only 1 possible person
+  // - Any current unique position + confirmation = immediate guess
+  // 
+  // IMPORTANT: Only use logical deduction if we haven't recently rejected guesses
+  // If user rejected a guess, they might have made a mistake or the data is wrong
+  // In that case, ask more discriminating questions instead of blindly guessing again
+  const askedQuestions = turns.map(t => t.question.toLowerCase())
+  const answers = turns.map(t => t.answer.toLowerCase())
+  
+  // Check if we recently rejected guesses
+  const hasRecentRejections = rejectedGuesses.length > 0
+  const shouldUseLogicalDeduction = !hasRecentRejections || rejectedGuesses.length > 3
+  
+  if (shouldUseLogicalDeduction) {
+    // Check for "currently in office" pattern with presidents
+    const askedAboutPresident = askedQuestions.some(q => 
+      q.includes('president') && (q.includes('u.s.') || q.includes('american'))
+    )
+    const confirmedPresident = askedAboutPresident && turns.some((t, i) => 
+      askedQuestions[i].includes('president') && 
+      (answers[i] === 'yes' || answers[i] === 'true')
+    )
+    const askedCurrentlyInOffice = askedQuestions.some(q => 
+      (q.includes('currently in office') || q.includes('in office now')) && q.includes('2026')
+    )
+    const confirmedCurrentlyInOffice = askedCurrentlyInOffice && turns.some((t, i) => 
+      (askedQuestions[i].includes('currently in office') || askedQuestions[i].includes('in office now')) &&
+      (answers[i] === 'yes' || answers[i] === 'true')
+    )
+    
+    // If they are the current U.S. president in 2026, there's only ONE person!
+    if (confirmedPresident && confirmedCurrentlyInOffice && hybridGuesses.length > 0) {
+      console.info('[Detective-RAG] ⚡ LOGICAL DEDUCTION: Current U.S. President in 2026 = unique identification!')
+      console.info('[Detective-RAG] Remaining candidates:', remainingCandidates.length)
+      console.info('[Detective-RAG] Top candidates:', hybridGuesses.slice(0, 3).map(g => g.name).join(', '))
+      console.info('[Detective-RAG] Making immediate guess based on logical uniqueness')
+      const topGuess = hybridGuesses[0]
+      return {
+        question: `Is your character ${topGuess.name}?`,
+        topGuesses: [{ 
+          name: topGuess.name, 
+          confidence: Math.max(0.95, topGuess.confidence) // Very high confidence for logical deduction
+        }]
+      }
+    }
+    
+    // Check for other uniquely identifying positions
+    const uniquePositionPatterns = [
+      { role: 'pope', currently: 'currently' },
+      { role: 'dalai lama', currently: 'current' },
+      { role: 'secretary general', currently: 'current' },
+      { role: 'prime minister.*uk', currently: 'current' },
+    ]
+    
+    for (const pattern of uniquePositionPatterns) {
+      const askedAboutRole = askedQuestions.some(q => q.match(new RegExp(pattern.role)))
+      const confirmedRole = askedAboutRole && turns.some((t, i) => 
+        askedQuestions[i].match(new RegExp(pattern.role)) &&
+        (answers[i] === 'yes' || answers[i] === 'true')
+      )
+      const askedCurrent = askedQuestions.some(q => q.includes(pattern.currently))
+      const confirmedCurrent = askedCurrent && turns.some((t, i) => 
+        askedQuestions[i].includes(pattern.currently) &&
+        (answers[i] === 'yes' || answers[i] === 'true')
+      )
+      
+      if (confirmedRole && confirmedCurrent && hybridGuesses.length > 0) {
+        console.info(`[Detective-RAG] ⚡ LOGICAL DEDUCTION: Current ${pattern.role} = unique identification!`)
+        console.info('[Detective-RAG] Making immediate guess based on logical uniqueness')
+        const topGuess = hybridGuesses[0]
+        return {
+          question: `Is your character ${topGuess.name}?`,
+          topGuesses: [{ 
+            name: topGuess.name, 
+            confidence: Math.max(0.95, topGuess.confidence)
+          }]
+        }
+      }
+    }
+  } else {
+    console.info('[Detective-RAG] Skipping logical deduction - recent rejections suggest data may be incorrect or user made mistake')
+    console.info('[Detective-RAG] Rejected guesses:', rejectedGuesses)
+  }
+
   // Check if we should use a strategic question based on information theory
   const strategicQuestion = getMostInformativeQuestion(
     remainingCandidates,
@@ -728,11 +836,13 @@ async function askNextQuestion(
     
     // Check if this question was already asked
     const askedQuestions = turns.map(t => t.question.toLowerCase())
+    console.log(`[Detective-RAG] Checking if "${strategicQuestion}" is duplicate. Previously asked (${askedQuestions.length}):`, askedQuestions)
     const isDuplicate = askedQuestions.includes(strategicQuestion.toLowerCase())
     if (isDuplicate) {
       console.warn(`[Detective-RAG] Strategic question already asked: "${strategicQuestion}"`)
       console.warn('[Detective-RAG] Falling through to LLM question generation')
     } else {
+      console.log(`[Detective-RAG] Strategic question is new, returning it`)
       return {
         question: strategicQuestion,
         topGuesses: hybridGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
@@ -759,8 +869,9 @@ async function askNextQuestion(
   // Otherwise, ask discriminating questions to narrow down similar candidates
   const shouldMakeDirectGuess = (
     remainingCandidates.length <= 2 ||  // Only 1-2 candidates left
+    (remainingCandidates.length <= 3 && turns.length >= 12) ||  // 3 candidates after enough questions
     (hybridGuesses[0]?.confidence >= 0.85 && remainingCandidates.length <= 5) ||  // Very high confidence with small pool
-    (turns.length >= 20 && remainingCandidates.length <= 5)  // Many questions asked, small pool
+    (turns.length >= 18 && remainingCandidates.length <= 5)  // Many questions asked, small pool
   ) && hasEnoughTraits && enoughTurnsSinceRejection
   
   if (shouldMakeDirectGuess) {
@@ -1012,16 +1123,28 @@ export async function askDetective(
   console.info('[Detective-RAG] ===== NEW TURN =====')
   console.info('[Detective-RAG] Turn number:', turnAdded)
   console.info('[Detective-RAG] Incoming traits:', traits.length, traits)
-  console.info('[Detective-RAG] Previous question:', previousQuestion)
-  console.info('[Detective-RAG] Answer:', answer)
 
   const newTraits: (Trait & TurnAdded)[] = []
   let updatedRejectedGuesses = [...rejectedGuesses]
 
-  // Step 1: Check if previous question was a character guess
-  if (previousQuestion && answer) {
+  // Step 1: Extract trait from the most recent turn
+  // If previousQuestion/answer are not provided, get them from the last turn
+  let questionToAnalyze = previousQuestion
+  let answerToAnalyze = answer
+  
+  if (!questionToAnalyze && turns.length > 0) {
+    const lastTurn = turns[turns.length - 1]
+    questionToAnalyze = lastTurn.question
+    answerToAnalyze = lastTurn.answer
+  }
+  
+  console.info('[Detective-RAG] Previous question:', questionToAnalyze)
+  console.info('[Detective-RAG] Answer:', answerToAnalyze)
+
+  // Step 2: Check if previous question was a character guess or extract trait
+  if (questionToAnalyze && answerToAnalyze) {
     // Match "Is your character X?" pattern
-    const guessMatch = previousQuestion.match(/^Is your character (.+)\?$/i)
+    const guessMatch = questionToAnalyze.match(/^Is your character (.+)\?$/i)
     const capturedText = guessMatch?.[1]?.trim()
     
     // List of common trait keywords/patterns (NOT character names)
@@ -1035,23 +1158,23 @@ export async function askDetective(
     const isTraitQuestion = traitKeywords.some(kw => capturedText?.toLowerCase().includes(kw))
     const isCharacterGuess = capturedText && !isTraitQuestion
     
-    console.info(`[Detective-RAG] Question analysis: "${previousQuestion}"`)
+    console.info(`[Detective-RAG] Question analysis: "${questionToAnalyze}"`)
     console.info(`[Detective-RAG]   Captured: "${capturedText}"`)
     console.info(`[Detective-RAG]   Is trait question: ${isTraitQuestion}`)
     console.info(`[Detective-RAG]   Is character guess: ${isCharacterGuess}`)
     
     if (isCharacterGuess && capturedText) {
-      if (answer === 'no' || answer === 'probably_not') {
+      if (answerToAnalyze === 'no' || answerToAnalyze === 'probably_not') {
         console.info(`[Detective-RAG] ✗ User rejected guess: ${capturedText}`)
         updatedRejectedGuesses.push(capturedText)
-      } else if (answer === 'yes') {
+      } else if (answerToAnalyze === 'yes') {
         console.info(`[Detective-RAG] ✓ User confirmed guess: ${capturedText}!`)
         // This is handled by useGameLoop with CONFIRM_GUESS
       }
     } else {
       // Regular question - extract trait
       console.info('[Detective-RAG] Extracting trait from Q&A...')
-      const extractedTrait = await extractTrait(previousQuestion, answer, turnAdded)
+      const extractedTrait = await extractTrait(questionToAnalyze, answerToAnalyze, turnAdded)
       if (extractedTrait) {
         newTraits.push({ ...extractedTrait, turnAdded })
         console.info('[Detective-RAG] ✓ Extracted trait:', extractedTrait.key, '=', extractedTrait.value, `(confidence: ${Math.round(extractedTrait.confidence * 100)}%)`)
@@ -1065,7 +1188,12 @@ export async function askDetective(
   const updatedTraits = [...traits, ...newTraits]
   console.info('[Detective-RAG] Updated traits for filtering:', updatedTraits.length, updatedTraits)
   
-  const { question, topGuesses } = await askNextQuestion(updatedTraits, turns, updatedRejectedGuesses)
+  // Build complete turn history including the current turn (if we have it)
+  const completeTurnHistory = questionToAnalyze 
+    ? [...turns, { question: questionToAnalyze, answer: answerToAnalyze || 'yes' }]
+    : turns
+  
+  const { question, topGuesses } = await askNextQuestion(updatedTraits, completeTurnHistory, updatedRejectedGuesses)
 
   console.info('[Detective-RAG] ===== RESULTS =====')
   console.info('[Detective-RAG] Next question:', question)

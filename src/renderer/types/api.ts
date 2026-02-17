@@ -29,6 +29,8 @@ export interface ImageGenerationRequest {
   steps?: number
   cfg_scale?: number
   seed?: number
+  image?: string  // Base64 image for img2img
+  denoising_strength?: number  // 0.0-1.0, how much to change the input image
 }
 
 export interface ImageGenerationResponse {

@@ -1,10 +1,10 @@
 import { useCallback, useRef } from 'react'
 import { useGameState, useGameDispatch } from '../context/GameContext'
 import { askDetective, recordRejectedGuess, recordAmbiguousQuestion, resetSessionLearning } from '../services/detective-rag'
-import { buildImagePrompt } from '../services/visualist'
-// import { generateVisualistPrompt } from '../services/visualist-llm' // Not implemented yet
-import { renderImage, renderHeroImage } from '../services/artist'
-import { CONFIDENCE_THRESHOLD, ENABLE_IMAGE_GENERATION, ENABLE_VISUALIST_LLM } from '../../shared/constants'
+import { buildHeroImagePrompt } from '../services/visualist'
+import { getCharacterReferenceImage } from '../services/image-search'
+import { renderCaricature, renderSimplePortrait } from '../services/artist'
+import { CONFIDENCE_THRESHOLD, ENABLE_IMAGE_GENERATION } from '../../shared/constants'
 import type { AnswerValue, Trait } from '../types/game'
 
 export function useGameLoop() {
@@ -13,20 +13,33 @@ export function useGameLoop() {
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // Turn-by-turn images use the pure function (fast, no model switching).
-  // The LLM Visualist is only used for hero images after the game ends.
-  const generateImageInBackground = useCallback((traits: Trait[], turn: number, seed: number) => {
+  // Mid-game image generation: Simple text-to-image portrait (fast)
+  const generateImageInBackground = useCallback((topGuesses: Array<{name: string, confidence: number}>, traits: Trait[], turn: number, seed: number) => {
     if (!ENABLE_IMAGE_GENERATION) {
       console.info('[GameLoop] Image generation disabled')
       return
     }
+    
+    // Need at least one guess with reasonable confidence
+    if (!topGuesses || topGuesses.length === 0 || topGuesses[0].confidence < 0.3) {
+      console.info('[GameLoop] No strong guess yet, skipping image update')
+      return
+    }
+    
+    const topGuess = topGuesses[0]
+    console.info(`[GameLoop] Generating portrait for top guess: ${topGuess.name} (${Math.round(topGuess.confidence * 100)}%)`)
+    
     ;(async () => {
       try {
-        const prompt = buildImagePrompt(traits, turn)
-        const imageUrl = await renderImage(prompt, seed, turn)
+        // Build appearance details
+        const appearanceDetails = buildHeroImagePrompt(topGuess.name, traits)
+        
+        // Generate simple portrait (fast, no img2img)
+        const imageUrl = await renderSimplePortrait(topGuess.name, seed + turn * 1000, appearanceDetails)
         dispatch({ type: 'UPDATE_IMAGE', imageUrl })
       } catch (e) {
-        console.warn('Image generation failed:', e)
+        console.warn('Mid-game portrait generation failed:', e)
+        // Don't show error to user - mid-game images are optional
       }
     })()
   }, [dispatch])
@@ -39,7 +52,8 @@ export function useGameLoop() {
       dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
 
       const s = stateRef.current
-      generateImageInBackground(newTraits, 0, s.seed)
+      // Try to generate image for initial top guess
+      generateImageInBackground(topGuesses, newTraits, 1, s.seed)
     } catch (e) {
       dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Failed to start game' })
     }
@@ -47,28 +61,33 @@ export function useGameLoop() {
 
   const submitAnswer = useCallback(async (answer: AnswerValue) => {
     const s = stateRef.current
-    dispatch({ type: 'SUBMIT_ANSWER', answer })
-
+    
     // Track ambiguous questions (user doesn't know the answer)
     if (answer === 'dont_know' && s.currentQuestion) {
       recordAmbiguousQuestion(s.currentQuestion, s.turn)
     }
 
+    // Dispatch to update state - this adds the current turn to state.turns
+    dispatch({ type: 'SUBMIT_ANSWER', answer })
+
     try {
+      // Build turn history: Include the current turn that was just answered
+      // s.turns has all PREVIOUS turns, we need to add the current one
       const turnHistory = [
         ...s.turns.map(t => ({ question: t.question, answer: t.answer })),
+        ...(s.currentQuestion ? [{ question: s.currentQuestion, answer }] : [])
       ]
-      if (s.currentQuestion) {
-        turnHistory.push({ question: s.currentQuestion, answer })
-      }
+      
+      console.log(`[GameLoop] Calling askDetective with turn history (${turnHistory.length} items):`, 
+                  turnHistory.map(t => t.question).slice(-3))  // Show last 3
+      console.log(`[GameLoop] Latest turn: "${s.currentQuestion}" -> ${answer}`)
 
       const { question, newTraits, topGuesses } = await askDetective(
         s.traits,
-        turnHistory,
+        turnHistory,  // All turns INCLUDING the one just answered
         s.turn + 1,
-        s.rejectedGuesses,
-        s.currentQuestion || undefined,  // ✅ ADD: previous question (convert null to undefined)
-        answer                            // ✅ ADD: user's answer
+        s.rejectedGuesses
+        // Don't pass previousQuestion/answer separately - it's in turnHistory now
       )
 
       // Log UI state updates
@@ -90,7 +109,8 @@ export function useGameLoop() {
       dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
 
       const allTraits = [...s.traits, ...newTraits]
-      generateImageInBackground(allTraits, s.turn + 1, s.seed)
+      // Generate caricature of top guess
+      generateImageInBackground(topGuesses, allTraits, s.turn + 1, s.seed)
     } catch (e) {
       dispatch({ type: 'SET_ERROR', error: e instanceof Error ? e.message : 'Detective failed' })
     }
@@ -104,36 +124,48 @@ export function useGameLoop() {
       if (!ENABLE_IMAGE_GENERATION) {
         console.info('[GameLoop] Hero image generation disabled')
         dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: '' })
+      } else if (!s.finalGuess) {
+        console.warn('[GameLoop] No final guess - skipping hero image')
+        dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: s.currentImageUrl || '' })
       } else {
         try {
-          let prompt: string
-
-          if (ENABLE_VISUALIST_LLM) {
-            console.warn('[GameLoop] ENABLE_VISUALIST_LLM is true but visualist-llm module not implemented')
-            prompt = buildImagePrompt(s.traits, 20)
-            /* 
-            // Future implementation:
-            try {
-              const result = await generateVisualistPrompt({
-                traits: s.traits,
-                turn: s.turn,
-                phase: 'HERO',
-                topGuesses: s.topGuesses,
-                characterName: s.finalGuess || undefined,
-              })
-              prompt = result.prompt
-            } catch (e) {
-              console.warn('[GameLoop] Visualist LLM failed for hero, falling back:', e)
-              prompt = buildImagePrompt(s.traits, 20)
+          console.info('[GameLoop] ==========================================')
+          console.info('[GameLoop] GENERATING HERO IMAGE FOR:', s.finalGuess)
+          console.info('[GameLoop] ==========================================')
+          
+          // Build appearance description
+          console.info('[GameLoop] Step 1: Building appearance description...')
+          const appearanceDetails = buildHeroImagePrompt(s.finalGuess, s.traits)
+          console.info('[GameLoop] Appearance:', appearanceDetails)
+          
+          // Try simple portrait first (fast)
+          console.info('[GameLoop] Step 2: Generating portrait...')
+          let heroUrl: string
+          try {
+            heroUrl = await renderSimplePortrait(s.finalGuess, s.seed, appearanceDetails)
+            console.info('[GameLoop] ✓ Simple portrait generated')
+          } catch (portraitError) {
+            console.warn('[GameLoop] Simple portrait failed, trying caricature with reference...')
+            
+            // Fallback: Try img2img with reference image
+            const referenceImage = await getCharacterReferenceImage(s.finalGuess)
+            
+            if (!referenceImage) {
+              console.error('[GameLoop] ✗ No reference image found, using current image')
+              dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: s.currentImageUrl || '' })
+              return
             }
-            */
-          } else {
-            prompt = buildImagePrompt(s.traits, 20)
+            
+            console.info('[GameLoop] ✓ Found reference image, generating caricature...')
+            heroUrl = await renderCaricature(s.finalGuess, referenceImage, s.seed, appearanceDetails)
+            console.info('[GameLoop] ✓ Caricature generated')
           }
-
-          const heroUrl = await renderHeroImage(prompt, s.seed)
+          
+          console.info('[GameLoop] ✓✓✓ SUCCESS: Hero image generated!')
+          console.info('[GameLoop] ==========================================')
           dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: heroUrl })
-        } catch {
+        } catch (error) {
+          console.error('[GameLoop] ✗✗✗ ERROR: Hero image generation failed:', error)
           dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: s.currentImageUrl || '' })
         }
       }
