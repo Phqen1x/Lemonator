@@ -919,3 +919,78 @@ export function getCandidateContext(
   
   return lines.join('\n')
 }
+
+/**
+ * Score how well a character matches the given traits (fuzzy matching)
+ * Returns a score from 0.0 to 1.0
+ */
+export function scoreCharacterMatch(char: CharacterData, traits: Trait[]): number {
+  if (traits.length === 0) return 1.0 // No traits to match against
+  
+  let totalScore = 0
+  let totalWeight = 0
+  
+  for (const trait of traits) {
+    const matches = characterMatchesTrait(char, trait)
+    // Weight by confidence
+    const weight = trait.confidence
+    totalWeight += weight
+    
+    if (matches) {
+      totalScore += weight
+    }
+  }
+  
+  return totalWeight > 0 ? totalScore / totalWeight : 0
+}
+
+/**
+ * Filter characters with fuzzy matching - returns candidates above threshold
+ * More forgiving than strict filterCharactersByTraits
+ */
+export function filterCharactersFuzzy(traits: Trait[], threshold: number = 0.7): CharacterData[] {
+  const allChars = getAllCharacters()
+  
+  console.info(`[RAG-Fuzzy] Filtering ${allChars.length} characters with fuzzy matching (threshold: ${threshold})`)
+  
+  if (traits.length === 0) {
+    return allChars
+  }
+  
+  const scored = allChars.map(char => ({
+    char,
+    score: scoreCharacterMatch(char, traits)
+  }))
+  
+  const filtered = scored
+    .filter(({ score }) => score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .map(({ char }) => char)
+  
+  console.info(`[RAG-Fuzzy] Filtered from ${allChars.length} to ${filtered.length} characters (threshold: ${threshold})`)
+  
+  return filtered
+}
+
+/**
+ * Generate a dynamic question to discriminate between 5-10 similar candidates
+ * Uses LLM to craft a question that splits the candidate pool effectively
+ */
+export async function generateDynamicQuestion(
+  candidates: CharacterData[],
+  askedQuestions: string[]
+): Promise<string | null> {
+  if (candidates.length < 5 || candidates.length > 10) {
+    console.warn(`[RAG-Dynamic] Candidate pool size ${candidates.length} not optimal for dynamic questions (5-10 ideal)`)
+    return null
+  }
+  
+  console.info(`[RAG-Dynamic] Generating dynamic question for ${candidates.length} candidates`)
+  
+  // For now, return null to use static questions
+  // TODO: Implement LLM-based dynamic question generation
+  // This would pass candidate distinctive_facts to LLM and ask it to generate
+  // a discriminating question
+  
+  return null
+}

@@ -12,14 +12,14 @@ import type { Trait, Guess, AnswerValue } from '../types/game'
 import {
   loadCharacterKnowledge,
   filterCharactersByTraits,
+  filterCharactersFuzzy,
   getAllCharacters,
   getTopGuesses as getRagTopGuesses,
   getCandidateContext,
   getMostInformativeQuestion,
   getCharacterByName,
-  // TODO: Implement these next
-  // generateDynamicQuestion,
-  // scoreCharacterMatch
+  generateDynamicQuestion,
+  scoreCharacterMatch
 } from './character-rag'
 
 const ANSWER_LABELS: Record<AnswerValue, string> = {
@@ -480,20 +480,28 @@ async function askNextQuestion(
   console.info('[Detective-RAG] Turn:', turns.length + 1)
 
   // Use RAG to filter candidates based on confirmed traits
-  // NOTE: This does strict AND filtering - all traits must match
-  // Database limitation: characters are in single categories, but real-world
-  // entities can be ambiguous (e.g., "Iron Man" could be superhero OR movie character)
-  const remainingCandidates = filterCharactersByTraits(traits)
-  console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match confirmed traits`)
+  // Use fuzzy matching first - more forgiving than strict AND filtering
+  // Allows characters that match most (but not all) traits
+  let remainingCandidates = filterCharactersFuzzy(traits, 0.7)
+  console.info(`[Detective-RAG] ${remainingCandidates.length} candidates match with fuzzy threshold 0.7`)
+  
+  // If fuzzy matching returns nothing, fall back to strict filtering
+  if (remainingCandidates.length === 0) {
+    remainingCandidates = filterCharactersByTraits(traits)
+    console.info(`[Detective-RAG] Fallback to strict: ${remainingCandidates.length} candidates`)
+  }
 
   // CRITICAL: Handle 0 candidates - character not in database
   // Use LLM guessing after sufficient questions (15-20+) instead of waiting for 30+
   if (remainingCandidates.length === 0 && traits.length > 0) {
-    console.warn('[Detective-RAG] WARNING: No exact matches in database')
+    console.warn('[Detective-RAG] WARNING: No matches even with fuzzy matching')
     console.warn('[Detective-RAG] Character may not be in knowledge base')
     console.warn('[Detective-RAG] Confirmed traits:', JSON.stringify(traits, null, 2))
     
-    // Try partial matching - relax the last trait added
+    // Try even more relaxed fuzzy matching
+    const veryRelaxedCandidates = filterCharactersFuzzy(traits, 0.5)
+    console.warn(`[Detective-RAG] Very relaxed fuzzy (0.5 threshold): ${veryRelaxedCandidates.length} candidates`)
+    
     const traitSummary = traits.map(t => `${t.key}=${t.value}`).join(', ')
     console.warn(`[Detective-RAG] Looking for character with: ${traitSummary}`)
     
@@ -502,10 +510,10 @@ async function askNextQuestion(
     const shouldUseLLMGuessing = turns.length >= 15
     
     // Try filtering with fewer traits (relax most recent trait)
-    if (traits.length > 1 && !shouldUseLLMGuessing) {
+    if (traits.length > 1 && !shouldUseLLMGuessing && veryRelaxedCandidates.length === 0) {
       const relaxedTraits = traits.slice(0, -1)
       const relaxedCandidates = filterCharactersByTraits(relaxedTraits)
-      console.info(`[Detective-RAG] Relaxed filtering: ${relaxedCandidates.length} candidates with ${relaxedTraits.length} traits`)
+      console.info(`[Detective-RAG] Strict filtering with fewer traits: ${relaxedCandidates.length} candidates with ${relaxedTraits.length} traits`)
       
       if (relaxedCandidates.length > 0) {
         // Continue with relaxed filtering - try to narrow down further
