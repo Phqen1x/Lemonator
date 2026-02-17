@@ -788,7 +788,7 @@ function inferGender(char: CharacterData): 'male' | 'female' | 'unknown' {
 }
 
 /**
- * Get top N character guesses based on confirmed traits
+ * Get top N character guesses from pre-filtered candidates
  * Returns characters sorted by how well they match the traits
  * 
  * CRITICAL: Confidence should scale with trait count AND specificity
@@ -798,9 +798,11 @@ function inferGender(char: CharacterData): 'male' | 'female' | 'unknown' {
  */
 export function getTopGuesses(
   traits: Trait[],
-  topN: number = 3
+  topN: number = 3,
+  preFilteredCandidates?: CharacterData[]
 ): Array<{ name: string; confidence: number; character: CharacterData }> {
-  const candidates = filterCharactersByTraits(traits)
+  // Use pre-filtered candidates if provided, otherwise filter strictly
+  const candidates = preFilteredCandidates || filterCharactersByTraits(traits)
   
   if (candidates.length === 0) return []
   

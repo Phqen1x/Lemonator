@@ -115,6 +115,9 @@ export function useGameLoop() {
         'from a', 'from an', 'from the', 'known for', 'alive', 'dead', 'still alive',
         'a villain', 'a hero', 'a leader', 'in a band', 'a rapper',
         'well-known', 'internationally', 'primarily', 'associated with', 'part of',
+        'historical', 'a historical', 'figure', 'person', 'individual',
+        'someone', 'anybody', 'character who', 'character that',
+        'active', 'famous', 'known', 'celebrated', 'renowned',
       ]
       const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
 

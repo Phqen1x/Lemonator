@@ -442,6 +442,9 @@ function isCharacterNameQuestion(question: string): boolean {
     'a basketball', 'a soccer', 'a baseball', 'a combat',
     'well-known', 'internationally', 'primarily',
     'associated with', 'part of', 'based on',
+    'historical', 'a historical', 'figure', 'person', 'individual',
+    'someone', 'anybody', 'character who', 'character that',
+    'active', 'famous', 'known', 'celebrated', 'renowned',
   ]
 
   const capturedLower = captured.toLowerCase()
@@ -754,8 +757,8 @@ async function askNextQuestion(
     }
   }
 
-  // Get top guesses from RAG (database)
-  const ragGuessesRaw = getRagTopGuesses(traits, 5)
+  // Get top guesses from RAG (database) - pass fuzzy-filtered candidates  
+  const ragGuessesRaw = getRagTopGuesses(traits, 5, remainingCandidates)
     .filter(g => !rejectedGuesses.some(r => r.toLowerCase() === g.name.toLowerCase()))
   
   // Convert to simple Guess format for consistency with LLM guesses
