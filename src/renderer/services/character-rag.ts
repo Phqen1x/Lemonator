@@ -558,6 +558,34 @@ export function getMostInformativeQuestion(
   
   console.log(`[RAG] getMostInformativeQuestion called with ${askedQuestions.length} previously asked questions`)
   
+  // Check for mutually exclusive confirmed traits
+  // If sitcom=true, don't ask about drama
+  // If drama=true, don't ask about sitcom or animated
+  const hasSitcom = confirmedTraits.some(t => 
+    t.key === 'tv_show_type' && t.value === 'sitcom' && t.confidence >= 0.7
+  )
+  const hasDrama = confirmedTraits.some(t => 
+    t.key === 'tv_show_type' && t.value === 'drama' && t.confidence >= 0.7
+  )
+  const hasAnimated = confirmedTraits.some(t => 
+    t.key === 'tv_show_type' && t.value === 'animated' && t.confidence >= 0.7
+  )
+  
+  // Build exclusion list for mutually exclusive questions
+  const excludedQuestions = new Set<string>()
+  if (hasSitcom) {
+    excludedQuestions.add('is your character from a drama series?')
+    excludedQuestions.add('is your character from an animated show?')
+  }
+  if (hasDrama) {
+    excludedQuestions.add('is your character from a sitcom?')
+    excludedQuestions.add('is your character from an animated show?')
+  }
+  if (hasAnimated) {
+    excludedQuestions.add('is your character from a sitcom?')
+    excludedQuestions.add('is your character from a drama series?')
+  }
+  
   for (const {q, test, fictionOnly, realPersonOnly, categoryRequired} of questions) {
     // Skip fiction-only questions if character is confirmed as non-fictional
     if (fictionOnly && isNotFictional) {
@@ -574,6 +602,12 @@ export function getMostInformativeQuestion(
     // Skip category-specific questions if that category has been ruled out
     if (categoryRequired && ruledOutCategories.has(categoryRequired)) {
       console.info(`[RAG] Skipping ${categoryRequired} question (category ruled out): "${q}"`)
+      continue
+    }
+    
+    // Skip mutually exclusive questions
+    if (excludedQuestions.has(q.toLowerCase())) {
+      console.info(`[RAG] Skipping mutually exclusive question: "${q}"`)
       continue
     }
     

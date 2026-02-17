@@ -6,7 +6,7 @@
  */
 
 import { chatCompletion } from './lemonade'
-import { DETECTIVE_MODEL } from '../../shared/constants'
+import { DETECTIVE_MODEL, CONFIDENCE_THRESHOLD } from '../../shared/constants'
 import type { Trait, Guess, AnswerValue } from '../types/game'
 import {
   loadCharacterKnowledge,
@@ -92,6 +92,10 @@ const RAG_DETECTIVE_SYSTEM_PROMPT = `You are an expert detective in a character-
 5. Make a guess when confidence ≥ 0.75 OR remaining candidates ≤ 2
 6. **DO NOT ask about:** Geography/nationality, specific dates, specific awards, specific physical features (too specific, can't be tracked)
 7. **ONLY ask about:** Category, fictional status, gender, powers, alignment, era (broad), origin medium, team membership
+8. **NEVER name specific characters in questions** - that should trigger a guess phase, not a regular question
+   - BAD: "Is your character Dennis the Menace?"
+   - BAD: "Is your character Homer Simpson?"
+   - GOOD: "Is your character from The Simpsons?"
 
 **CATEGORY LOGIC (CRITICAL):**
 Once a character's primary category is confirmed (e.g., actor, athlete, musician, politician):
@@ -99,6 +103,12 @@ Once a character's primary category is confirmed (e.g., actor, athlete, musician
 - Example: If confirmed "actor" → don't ask "athlete?", "musician?", "politician?"
 - Exception: Some characters have overlapping roles (actor/musician) - only ask if top candidates suggest this
 - Focus on traits within that category: era, specific works, characteristics, teams
+
+**MUTUAL EXCLUSIVITY:**
+Don't ask contradictory questions:
+- If sitcom confirmed → don't ask about drama or animated shows
+- If drama confirmed → don't ask about sitcoms or animated shows
+- If superhero confirmed → focus on DC/Marvel, not other categories
 
 **OUTPUT FORMAT:**
 Return ONLY valid JSON:
@@ -986,6 +996,35 @@ Return your response as JSON.`
       return {
         question: getFallbackQuestion(turns.map(t => t.question), traits),
         topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
+      }
+    }
+    
+    // CRITICAL: Detect if question names a specific character
+    // Questions like "Is your character Dennis the Menace?" should trigger a guess, not be asked
+    const characterNamePattern = /is your character ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\?/i
+    const characterMatch = questionText.match(characterNamePattern)
+    if (characterMatch) {
+      const characterName = characterMatch[1]
+      console.warn(`[Detective-RAG] ⚠️ Question names specific character: "${characterName}"`)
+      console.warn('[Detective-RAG] This should be a formal guess, not a question!')
+      
+      // Check if this character is in our top guesses
+      const matchingGuess = ragGuesses.find(g => 
+        g.name.toLowerCase() === characterName.toLowerCase()
+      )
+      
+      if (matchingGuess && matchingGuess.confidence >= CONFIDENCE_THRESHOLD) {
+        console.info('[Detective-RAG] Converting to formal guess')
+        return {
+          question: `Is your character ${matchingGuess.name}?`,
+          topGuesses: [{ name: matchingGuess.name, confidence: Math.max(0.95, matchingGuess.confidence) }]
+        }
+      } else {
+        console.warn('[Detective-RAG] Character not in top guesses or low confidence - using fallback question')
+        return {
+          question: getFallbackQuestion(turns.map(t => t.question), traits),
+          topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
+        }
       }
     }
 
