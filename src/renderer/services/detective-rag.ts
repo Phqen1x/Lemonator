@@ -318,6 +318,12 @@ Answer: "${ANSWER_LABELS[answer]}"
 CRITICAL: Match the question topic precisely. Don't infer unrelated traits.
 Extract trait(s) as a JSON array.${contextualHint}${existingTraitsContext}`
 
+  // Debug logging to verify existing traits are being passed
+  if (existingTraits && existingTraits.length > 0) {
+    console.info(`[Detective-RAG] 🛡️ Contradiction protection active - existing traits:`, 
+                 existingTraits.map(t => `${t.key}=${t.value}`).join(', '))
+  }
+
   try {
     const response = await chatCompletion({
       model: DETECTIVE_MODEL,
@@ -337,6 +343,43 @@ Extract trait(s) as a JSON array.${contextualHint}${existingTraitsContext}`
     if (traits.length === 0) {
       console.warn('[Detective-RAG] No valid traits extracted from:', raw)
       return []
+    }
+    
+    // CRITICAL: Validate extracted traits don't contradict existing traits
+    if (existingTraits && existingTraits.length > 0) {
+      const contradictions = traits.filter(newTrait => {
+        return existingTraits.some(existingTrait => {
+          // Same key but different value (for single-valued traits)
+          if (newTrait.key === existingTrait.key && newTrait.key !== 'category' && newTrait.key !== 'origin_medium') {
+            // Allow same value (redundant but not contradictory)
+            if (newTrait.value === existingTrait.value) return false
+            
+            console.warn(`[Detective-RAG] ❌ CONTRADICTION: Existing ${existingTrait.key}=${existingTrait.value}, new ${newTrait.key}=${newTrait.value}`)
+            return true
+          }
+          
+          // For category/origin_medium: check NOT_X vs X contradictions
+          if (newTrait.key === existingTrait.key && (newTrait.key === 'category' || newTrait.key === 'origin_medium')) {
+            const newIsNegative = newTrait.value.startsWith('NOT_')
+            const existingIsNegative = existingTrait.value.startsWith('NOT_')
+            const newBase = newIsNegative ? newTrait.value.slice(4) : newTrait.value
+            const existingBase = existingIsNegative ? existingTrait.value.slice(4) : existingTrait.value
+            
+            // Contradiction: NOT_X conflicts with X (or vice versa)
+            if (newBase === existingBase && newIsNegative !== existingIsNegative) {
+              console.warn(`[Detective-RAG] ❌ CONTRADICTION: Existing ${existingTrait.key}=${existingTrait.value}, new ${newTrait.key}=${newTrait.value}`)
+              return true
+            }
+          }
+          
+          return false
+        })
+      })
+      
+      if (contradictions.length > 0) {
+        console.error('[Detective-RAG] 🚨 Rejected contradictory traits:', contradictions.map(t => `${t.key}=${t.value}`).join(', '))
+        return []  // Return empty array if ANY contradiction found
+      }
     }
     
     // Add turnAdded to all traits
