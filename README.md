@@ -1,12 +1,12 @@
 # 🍋 Lemonator
 
-**AI-Powered Character Guessing Game with Real-Time Portrait Generation**
+**AI-Powered Character Guessing Game with a Lemonade Mascot**
 
-Lemonator is a reverse Akinator game where an AI detective asks you questions about a character you're thinking of, then uses advanced reasoning and image generation to guess who it is—while dynamically drawing their portrait as clues are revealed!
+Lemonator is a reverse Akinator game where an AI detective asks you questions about a character you're thinking of, then uses advanced reasoning to guess who it is. Meet Lemon, your expressive mascot who reacts to your answers and reveals the character portrait when the AI makes its final guess!
 
 <div align="center">
 
-**Think of a character. Answer questions. Watch the AI solve the mystery!**
+**Think of a character. Answer questions. Watch Lemon solve the mystery!**
 
 </div>
 
@@ -14,18 +14,21 @@ Lemonator is a reverse Akinator game where an AI detective asks you questions ab
 
 ## 🎮 What is Lemonator?
 
-Lemonator combines three AI agents working together:
+Lemonator combines multiple AI agents working together:
 
 - **🔍 The Detective** (Qwen3-4B) - Asks strategic questions and narrows down possibilities using RAG
 - **🎨 The Visualist** (Phi-4-mini) - Translates traits into detailed art descriptions  
-- **🖼️ The Artist** (SDXL-Turbo) - Generates real-time portraits based on discovered clues
+- **🖼️ The Artist** (SDXL-Turbo) - Generates character portraits when making final guesses
+- **🍋 Lemon the Mascot** - Your animated companion who reacts to every answer!
 
 The game features:
-- **530+ characters** across 9 categories (actors, musicians, politicians, athletes, superheroes, anime, TV, video games, historical figures)
+- **407+ characters** across 9 categories (actors, musicians, politicians, athletes, superheroes, anime, TV, video games, historical figures)
 - **Smart question selection** using information theory and entropy calculations
-- **Real-time portrait generation** that evolves as the AI learns more about your character
+- **Expressive lemonade mascot** that changes expressions based on your answers (yes, no, probably, don't know)
+- **Portrait generation** when the AI makes a guess
 - **Fuzzy RAG matching** to handle ambiguous or missing traits gracefully
 - **Multi-trait extraction** for faster convergence
+- **Contradiction detection** to ensure logical consistency
 
 ---
 
@@ -110,24 +113,29 @@ The AI will ask you yes/no questions about your character. Answer honestly with:
 - **No** - Definitely false
 - **I Don't Know** - Skip the question (trait won't be used)
 
-### Watch the Portrait Evolve
+**Watch Lemon react!** The lemonade mascot changes expressions based on your answers, showing excitement for definitive answers and confusion for uncertain ones.
+
+### The AI's Investigation
 
 As you answer questions, the AI:
-1. **Extracts traits** from your answers (gender, category, appearance, etc.)
-2. **Narrows down candidates** using its knowledge base
-3. **Generates portraits** of top guesses in real-time
-4. **Updates the image** as more clues are revealed
+1. **Extracts traits** from your answers (gender, category, nationality, appearance, etc.)
+2. **Narrows down candidates** using its knowledge base with RAG filtering
+3. **Avoids contradictions** - Won't extract traits that conflict with what you've already confirmed
+4. **Shows top guesses** with confidence scores throughout the game
 
 ### The Guess
 
-When the AI reaches **95% confidence**, it will make a formal guess:
+When the AI reaches **95% confidence** (or detects a character name match), it will:
 
-- **Correct** ✓ - You win! A detailed hero portrait is generated
-- **Wrong** ✗ - The AI keeps asking questions and learning
+1. **Generate a portrait** of the character (2-5 seconds)
+2. **Show a guess dialog** with the character's name and image
+3. **Ask "Am I right?"** with two buttons:
+   - **Yes!** ✓ - You win! The game ends with celebration
+   - **No, keep trying** ✗ - The AI continues asking questions and learning
 
 ### Top Guesses
 
-Throughout the game, you'll see the AI's top 3-5 guesses with confidence scores. Watch as the list narrows down to your character!
+Throughout the game, you'll see the AI's top 3-5 guesses with confidence scores in the sidebar. Watch as the list narrows down to your character!
 
 ---
 
@@ -226,7 +234,8 @@ Higher values = slower guesses (more accurate)
 2. **Category Identification** - Quickly determines if actor/athlete/musician/etc.
 3. **Category-Specific Questions** - "Did they act in Marvel movies?" "Are they a rapper?"
 4. **Trait Narrowing** - Asks about appearance, era, popularity
-5. **High Confidence Guess** - When candidates narrow to 1-3 matches
+5. **Contradiction Prevention** - Validates new traits don't conflict with existing ones
+6. **High Confidence Guess** - When candidates narrow to 1-3 matches with 95%+ confidence
 
 ### RAG Knowledge Base
 
@@ -236,13 +245,18 @@ The detective uses **Retrieval-Augmented Generation** (RAG) with:
 - **Fuzzy matching** - Fallback scoring (match MOST traits)
 - **Information gain** - Shannon entropy to pick most discriminating questions
 - **Mutual exclusivity** - Avoids illogical questions (e.g., "Are they a politician?" after confirming actor)
+- **Trait validation** - Two-layer protection against contradictory traits (prompt + code validation)
 
-### Image Generation Pipeline
+### Portrait Generation
 
-1. **Extract visual traits** from Q&A (hair color, age, ethnicity, style)
-2. **Build appearance prompt** using character knowledge + confirmed traits
-3. **Generate portrait** with SDXL-Turbo (2-5 seconds)
-4. **Update in background** - Game continues without blocking
+**When making a guess**, the AI:
+
+1. **Builds appearance prompt** using character knowledge + confirmed traits
+2. **Generates portrait** with SDXL-Turbo in background (2-5 seconds, non-blocking)
+3. **Shows guess dialog** immediately (portrait appears when ready)
+4. **Game continues** - No waiting for image generation
+
+**During gameplay**: Lemon the mascot is displayed with different expressions based on your answers (happy for "yes", sad for "no", thoughtful for "probably", confused for "don't know").
 
 ---
 
@@ -250,22 +264,24 @@ The detective uses **Retrieval-Augmented Generation** (RAG) with:
 
 ### "Lemonade server may be overloaded"
 
-**Problem**: Image generation times out after 30 seconds
+**Problem**: Portrait generation times out after 30 seconds
 
 **Solutions**:
 - Check if Lemonade server is running: `curl http://localhost:8000/health`
 - Ensure SDXL-Turbo model is loaded
 - Check GPU memory usage (SDXL needs ~6GB VRAM)
-- Reduce image size or use CPU fallback
+- Portrait generation is optional - the game continues even if it fails
+- Consider disabling image generation by setting `ENABLE_IMAGE_GENERATION = false` in constants.ts
 
 ### "No matches even with fuzzy matching"
 
 **Problem**: Character not in knowledge base
 
 **Solutions**:
-- The character might not be in the 530-character database
+- The character might not be in the 407-character database
 - Check `character-knowledge.json` to see available characters
-- The AI will continue asking questions and use LLM-based guessing as fallback
+- Add your character to the database with proper traits and distinctive_facts
+- The game will continue and the AI will make its best guess based on traits
 
 ### Game is slow between questions
 
@@ -278,11 +294,21 @@ The detective uses **Retrieval-Augmented Generation** (RAG) with:
 
 ### Top guesses not showing
 
-**Problem**: Empty guesses array
+**Problem**: Empty guesses array or wrong confidence scores
 
 **Solution**: 
-- This was fixed in commit `4323216` - make sure you're running the latest version
+- This was fixed in recent commits with improved RAG filtering
+- Contradiction validation prevents illogical trait combinations
 - Restart the app to reload the JavaScript bundle
+
+### Guess dialog shows as regular question
+
+**Problem**: "Is your character [Name]?" appears with answer buttons instead of guess dialog
+
+**Solution**:
+- Fixed in commit `ad85ccd` - guess dialog now shows immediately
+- Portrait generates in background (non-blocking)
+- Make sure you're running the latest build
 
 ---
 
@@ -293,37 +319,45 @@ The detective uses **Retrieval-Augmented Generation** (RAG) with:
 **The Detective** (detective-rag.ts):
 - Manages game state and turn history
 - Extracts 1-N traits per question using Zod validation
-- Uses RAG to filter 530 characters → top candidates
+- Validates traits against existing ones to prevent contradictions
+- Uses RAG to filter 407 characters → top candidates
 - Selects next question using entropy/information gain
-- Makes guesses when confidence ≥ 95%
+- Makes guesses when confidence ≥ 95% or character name detected
 
 **The Visualist** (visualist.ts):
 - Receives confirmed traits as input
-- Generates detailed appearance descriptions
-- Maintains consistency across turns
-- Enhances with character-specific knowledge when available
+- Generates detailed appearance descriptions for portraits
+- Maintains consistency with character knowledge
+- Only used when generating final guess portraits
 
 **The Artist** (artist.ts):
 - Takes Visualist prompts as input
 - Generates 512x512 portraits with SDXL-Turbo
-- Non-blocking async generation (game continues while rendering)
-- Caches images by character name to avoid regeneration
+- Non-blocking async generation (guess dialog shows immediately)
+- Portrait appears in dialog when ready
+
+**Lemon the Mascot** (Canvas.tsx):
+- SVG lemonade character with 6 different expressions
+- Reacts to answer types: yes, no, probably_yes, probably_not, dont_know, neutral
+- Displayed throughout gameplay (replaced by portrait only during guess phase)
 
 ### Optimization Techniques
 
 - **Strict filtering first** - O(n) with early exit (fast)
 - **Fuzzy fallback** - O(n×m) scoring only when strict fails (rare)
-- **No verbose logging** - Console logs removed from hot paths
-- **Async image gen** - Never blocks game flow
+- **Minimal console logging** - Performance-critical paths optimized
+- **Async portrait generation** - Never blocks game flow, guess dialog shows immediately
 - **Category mutual exclusivity** - Once actor confirmed, skip politician/athlete/musician questions
+- **Contradiction validation** - Two-layer protection (prompt instruction + code validation) prevents illogical trait extraction
+- **Non-blocking guess flow** - Portrait renders in background while user can interact with guess dialog
 
 ### Performance Benchmarks
 
 - **Question generation**: 200-500ms (Qwen3-4B)
 - **Trait extraction**: 100-300ms (Qwen3-4B)  
-- **Appearance description**: 300-600ms (Phi-4-mini)
-- **Portrait generation**: 2-5 seconds (SDXL-Turbo on GPU)
-- **Total turn time**: ~1-2 seconds (excluding image gen)
+- **RAG filtering**: 50-200ms (in-memory)
+- **Portrait generation**: 2-5 seconds (SDXL-Turbo on GPU, non-blocking)
+- **Total turn time**: ~500ms-1s (excluding optional portrait gen)
 
 ---
 
@@ -331,11 +365,13 @@ The detective uses **Retrieval-Augmented Generation** (RAG) with:
 
 Contributions welcome! Areas for improvement:
 
-- Add more characters to `character-knowledge.json`
-- Improve question selection algorithm
+- Add more characters to `character-knowledge.json` (following the existing structure)
+- Improve question selection algorithm with more sophisticated entropy calculations
 - Add support for more languages
-- Enhance portrait generation with ControlNet/IP-Adapter
-- Add multiplayer mode
+- Enhance portrait generation with ControlNet/IP-Adapter for better consistency
+- Create more Lemon mascot expressions
+- Add sound effects and voice lines
+- Implement hint system for difficult characters
 
 ---
 
@@ -364,10 +400,12 @@ Having issues? Check:
 4. Recent commits in git history (many bug fixes recently!)
 
 **Latest Performance Fixes**:
+- `ad85ccd` - Fixed guess flow (dialog shows immediately, portrait renders async)
+- `17866cb` - Added contradiction validation (prevents NOT_actors after actors confirmed)
+- `e13c417` - Pass existing traits to LLM to prevent contradictions
+- `4a79287` - Added nationality trait support, pre-render portraits before guess
 - `892dbb1` - Removed verbose logging (93% reduction in console output)
 - `aa4e565` - Optimized filtering (strict first, fuzzy fallback)
-- `3a76b8b` - Fixed category mutual exclusivity
-- `e40c67d` - Fixed game hang (non-blocking image generation)
 
 ---
 
@@ -375,6 +413,6 @@ Having issues? Check:
 
 **🍋 When life gives you clues, make Lemonator! 🍋**
 
-*Think of a character. The AI will draw them while solving the mystery.*
+*Think of a character. Lemon will help solve the mystery!*
 
 </div>
