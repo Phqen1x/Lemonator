@@ -124,7 +124,9 @@ export function useGameLoop() {
       if (isCharacterGuessQuestion && guessName) {
         // Generate hero render BEFORE showing guess
         console.log(`[UI] 🎯 Turn ${s.turn + 1}: GUESS DETECTED - "${question}" → Creating character render for: ${guessName}`)
-        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+        
+        // DON'T dispatch SET_QUESTION - we're going straight to guess dialog
+        // dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
         
         // Generate portrait before making guess
         try {
@@ -144,7 +146,9 @@ export function useGameLoop() {
       if (topGuess && topGuess.confidence >= CONFIDENCE_THRESHOLD) {
         // Generate hero render BEFORE showing guess
         console.log(`[UI] 🎯 Turn ${s.turn + 1}: HIGH CONFIDENCE GUESS - Creating character render for: ${topGuess.name} (${Math.round(topGuess.confidence * 100)}%)`)
-        dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
+        
+        // DON'T dispatch SET_QUESTION - we're going straight to guess dialog
+        // dispatch({ type: 'SET_QUESTION', question, guesses: topGuesses, traits: newTraits })
         
         // Generate portrait before making guess
         try {
