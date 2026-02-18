@@ -3,16 +3,27 @@
   "version": "1.0.0",
   "description": "Lemonator — AI guesses your character while drawing them",
   "main": "dist-electron/main/index.js",
+  "author": {
+    "name": "Lemonators Team",
+    "email": "contact@lemonators.app"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "electron:dev": "npm run build && electron .",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac",
     "test:integration": "tsx src/tests/integration-test.ts",
     "test:quick": "tsx src/tests/integration-test.ts --games=5",
     "test:medium": "tsx src/tests/integration-test.ts --games=10",
     "test:full": "tsx src/tests/integration-test.ts --games=50",
     "test:category": "tsx src/tests/integration-test.ts --games=20 --category",
-    "test:visualist": "tsx src/tests/visualist-test.ts"
+    "test:visualist": "tsx src/tests/visualist-test.ts",
+    "test:wikipedia": "tsx src/tests/wikipedia-test.ts",
+    "test:wikipedia-loop": "tsx src/tests/auto-iterate-wikipedia.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -25,10 +36,44 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.1",
+    "electron-builder": "^26.7.0",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3",
     "vite": "^6.0.5",
     "vite-plugin-electron": "^0.28.8",
     "vite-plugin-electron-renderer": "^0.14.6"
+  },
+  "build": {
+    "appId": "com.lemonators.app",
+    "productName": "Lemonators",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.games"
+    }
   }
 }

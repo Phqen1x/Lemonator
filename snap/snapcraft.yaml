@@ -1,0 +1,106 @@
+name: lemonator
+summary: Akinator-style game
+description: |
+  Lemonator is an Akinator-style game where the user thinks of a person
+  and answers questions posed by an LLM about their character allowing the
+  LLM to narrow down the possible characters until it can successfully
+  guess who your character is using web-searches, databases, and LLM inference.
+
+  **Requirements**
+
+  This snap requires the lemonade-server snap to be installed and running.
+  The server provides the AI backend that powers this desktop client.
+
+  To install lemonater:
+
+    sudo snap install lemonator
+
+  You must have lemonade-server installed to use this.
+
+  **Features**
+
+adopt-info: lemonator
+grade: stable
+confinement: strict
+base: core24
+contact: https://github.com/phqen1x/lemonator/issues
+issues: https://github.com/phqen1x/lemonator/issues
+website: https://github.com/phqen1x/lemonator
+license: MIT
+compression: lzo
+
+platforms:
+  amd64:
+
+parts:
+  lemonator:
+    plugin: nil
+    source: .
+    source-type: git
+    build-packages:
+      - npm
+      - git
+    override-pull: |
+      craftctl default
+      # VERSION=$(craftctl get version)
+      VERSION=0.0.1
+      if [ -z $VERSION ]; then
+        VERSION=$(git describe --tags --abbrev=10)
+        craftctl set version=$VERSION
+      fi
+    override-build: |
+      set +u # For unbound variables
+      # workaround for build.snapcraft.io builds
+      # https://bugs.launchpad.net/bugs/1886861
+      if [ -n "$http_proxy" ]; then
+        export ELECTRON_GET_USE_PROXY=1
+        export GLOBAL_AGENT_HTTP_PROXY="${http_proxy}"
+        export GLOBAL_AGENT_HTTPS_PROXY="${http_proxy}"
+      fi
+
+      npm install
+      npm run electron:build:linux
+      cp -rp release/linux-unpacked $CRAFT_PART_INSTALL/
+    prime:
+      - linux-unpacked
+      - -*/chrome-sandbox
+      - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/lib
+      - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/include
+
+  scripts:
+    plugin: dump
+    source: scripts
+    override-build: |
+      mkdir -p $CRAFT_PART_INSTALL/bin/
+      cp launcher $CRAFT_PART_INSTALL/bin/
+
+  cleanup:
+    after: [ lemonator ]
+    plugin: nil
+    build-snaps: [ gnome-46-2404 ]
+    override-prime: |
+        set -eux
+        cd /snap/gnome-46-2404/current
+        find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/{} \;
+
+plugs:
+  shmem:
+    interface: shared-memory
+    private: true
+  lemonade-server:
+    interface: content
+    content: foo
+    target: $SNAP_DATA/foo
+    default-provider: lemonade-server
+
+apps:
+  lemonator:
+    extensions: [gnome]
+    command: bin/launcher
+    plugs:
+      - network
+      - shmem
+    environment:
+      GTK_USE_PORTAL: 1
+      TMPDIR: $XDG_RUNTIME_DIR
+      HOME: $SNAP_USER_COMMON

@@ -21,3 +21,11 @@ Screenshot*.png
 character-knowledge*.json~
 character-knowledge\ (*.json
 
+# Package lock
+package-lock.json
+
+# Release Packages
+*.snap
+*.AppImage
+*.deb
+*.exe
