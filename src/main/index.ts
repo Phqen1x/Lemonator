@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
+import fs from 'node:fs'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -47,6 +48,18 @@ ipcMain.on('window-maximize', () => {
 
 ipcMain.on('window-close', () => {
   mainWindow?.close()
+})
+
+// Character knowledge file handler
+ipcMain.handle('load-character-knowledge', async () => {
+  try {
+    const filePath = path.join(__dirname, '../../dist/character-knowledge.json')
+    const data = fs.readFileSync(filePath, 'utf-8')
+    return JSON.parse(data)
+  } catch (error) {
+    console.error('Failed to load character knowledge:', error)
+    throw error
+  }
 })
 
 app.whenReady().then(createWindow)

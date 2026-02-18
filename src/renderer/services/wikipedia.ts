@@ -22,8 +22,8 @@ interface WikipediaListPage {
 const searchCache = new Map<string, WikipediaListPage>()
 
 /**
- * Search for Wikipedia "List of X" pages
- * e.g., "List of American pop singers", "List of American actors"
+ * Search for Wikipedia Category pages containing people
+ * e.g., "American male actors" → "Category:American male actors"
  */
 export async function searchWikipediaList(query: string): Promise<WikipediaListPage | null> {
   // Check cache first
@@ -33,15 +33,29 @@ export async function searchWikipediaList(query: string): Promise<WikipediaListP
     return searchCache.get(cacheKey)!
   }
 
-  console.info(`[Wikipedia] Searching for: ${query}`)
+  console.info(`[Wikipedia] Searching for category: ${query}`)
 
   try {
-    // Search for list pages
+    // First, try direct category access
+    const directNames = await extractNamesFromCategory(query)
+    if (directNames.length >= 10) {
+      const listPage: WikipediaListPage = {
+        title: `Category:${query}`,
+        names: directNames.slice(0, 50),
+        source: 'wikipedia',
+      }
+      searchCache.set(cacheKey, listPage)
+      console.info(`[Wikipedia] ✓ Found ${directNames.length} names from direct category`)
+      return listPage
+    }
+
+    // If direct category fails, search for matching categories
     const searchUrl = new URL(WIKIPEDIA_API)
     searchUrl.searchParams.set('action', 'query')
     searchUrl.searchParams.set('format', 'json')
     searchUrl.searchParams.set('list', 'search')
-    searchUrl.searchParams.set('srsearch', query)
+    searchUrl.searchParams.set('srsearch', `incategory:"${query}"`)
+    searchUrl.searchParams.set('srnamespace', '14') // Category namespace
     searchUrl.searchParams.set('srlimit', '5')
     searchUrl.searchParams.set('origin', '*') // CORS
 
@@ -54,14 +68,15 @@ export async function searchWikipediaList(query: string): Promise<WikipediaListP
     const searchResults = searchData.query?.search as WikipediaSearchResult[] | undefined
 
     if (!searchResults || searchResults.length === 0) {
-      console.warn(`[Wikipedia] No results for: ${query}`)
+      console.warn(`[Wikipedia] No category results for: ${query}`)
       return null
     }
 
-    // Try each result until we find one with a good list
+    // Try each category result
     for (const result of searchResults) {
-      console.info(`[Wikipedia] Trying page: ${result.title}`)
-      const names = await extractNamesFromPage(result.title)
+      console.info(`[Wikipedia] Trying category: ${result.title}`)
+      const categoryName = result.title.replace('Category:', '')
+      const names = await extractNamesFromCategory(categoryName)
       
       if (names.length >= 10) {
         const listPage: WikipediaListPage = {
@@ -77,7 +92,7 @@ export async function searchWikipediaList(query: string): Promise<WikipediaListP
       }
     }
 
-    console.warn(`[Wikipedia] No suitable list found for: ${query}`)
+    console.warn(`[Wikipedia] No suitable category found for: ${query}`)
     return null
   } catch (error) {
     console.error(`[Wikipedia] Search error:`, error)
@@ -86,10 +101,67 @@ export async function searchWikipediaList(query: string): Promise<WikipediaListP
 }
 
 /**
+ * Extract character/person names from a Wikipedia CATEGORY
+ * Uses MediaWiki Action API to get category members (actual person pages)
+ */
+async function extractNamesFromCategory(categoryName: string): Promise<string[]> {
+  try {
+    console.info(`[Wikipedia] Fetching members from category: ${categoryName}`)
+    
+    // Use MediaWiki Action API to get category members
+    const url = new URL(WIKIPEDIA_API)
+    url.searchParams.set('action', 'query')
+    url.searchParams.set('format', 'json')
+    url.searchParams.set('list', 'categorymembers')
+    url.searchParams.set('cmtitle', `Category:${categoryName}`)
+    url.searchParams.set('cmlimit', '100') // Get up to 100 members
+    url.searchParams.set('cmnamespace', '0') // Only main namespace (articles)
+    url.searchParams.set('cmtype', 'page') // Only pages, not subcategories
+    url.searchParams.set('origin', '*') // CORS
+    
+    const response = await fetch(url.toString())
+    if (!response.ok) {
+      throw new Error(`Failed to fetch category members: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    const members = data.query?.categorymembers || []
+    
+    const names: string[] = []
+    
+    for (const member of members) {
+      const title = member.title
+      
+      // Basic filtering for person names
+      if (title.startsWith('List ') ||
+          title.includes('disambiguation') ||
+          title.includes('(') && !title.includes('(actor)') && !title.includes('(singer)') ||
+          title.length < 3 ||
+          title.length > 40) {
+        continue
+      }
+      
+      names.push(title)
+    }
+    
+    console.info(`[Wikipedia] Extracted ${names.length} names from category`)
+    return names
+  } catch (error) {
+    console.error(`[Wikipedia] Category extract error:`, error)
+    return []
+  }
+}
+
+/**
  * Extract character/person names from a Wikipedia page
  * Uses MediaWiki Action API to get category members or page links
  */
 async function extractNamesFromPage(pageTitle: string): Promise<string[]> {
+  // If it's a category, use category members instead
+  if (pageTitle.startsWith('Category:')) {
+    return extractNamesFromCategory(pageTitle.replace('Category:', ''))
+  }
+  
   try {
     console.info(`[Wikipedia] Fetching links from: ${pageTitle}`)
     
@@ -158,10 +230,14 @@ async function extractNamesFromPage(pageTitle: string): Promise<string[]> {
             linkTitle.includes(' film)') ||  // "(film)" suffix
             linkTitle.includes(' band)') ||  // "(band)" suffix
             linkTitle.includes(' company)') ||  // "(company)" suffix
+            linkTitle.includes(' (magazine') ||  // "(magazine)" suffix
+            linkTitle.includes(' (TV series') ||  // "(TV series)" suffix
+            linkTitle.includes(' (novel') ||  // "(novel)" suffix
+            linkTitle.includes(' (book') ||  // "(book)" suffix
             linkTitle.endsWith('s') && linkTitle.length < 10 ||  // Plural words < 10 chars (likely concepts)
             linkTitle === 'African Americans' ||  // Specific ethnic/demographic terms
             linkTitle === 'African-Americans' ||
-            linkTitle.includes('English') ||
+            linkTitle.includes('English') && !linkTitle.includes(',') ||
             linkTitle.includes('American ') && !linkTitle.includes(',') ||  // "American football" but not "Smith, American actor"
             linkTitle.includes('African-American ') && !linkTitle.includes(',') ||
             linkTitle.includes('British ') && !linkTitle.includes(',') ||
@@ -231,7 +307,7 @@ async function extractNamesFromPage(pageTitle: string): Promise<string[]> {
 
 /**
  * Build search query from confirmed traits
- * e.g., {category: "musicians", nationality: "american"} → "List of American musicians"
+ * e.g., {category: "actors", nationality: "american"} → "American actors"
  */
 export function buildWikipediaQuery(traits: Array<{ key: string; value: string }>): string | null {
   // Find positive category (not NOT_X)
@@ -243,7 +319,7 @@ export function buildWikipediaQuery(traits: Array<{ key: string; value: string }
     return null // Need at least a category to search
   }
 
-  // Map our categories to Wikipedia list page patterns
+  // Map our categories to Wikipedia category patterns
   const categoryMap: Record<string, string> = {
     'actors': 'actors',
     'musicians': 'musicians',
@@ -262,10 +338,14 @@ export function buildWikipediaQuery(traits: Array<{ key: string; value: string }
 
   const mappedCategory = categoryMap[category.value] || category.value
 
-  // Build query with nationality if available
-  let query = 'List of '
+  // Build query for Wikipedia category search
+  // Format: "American male actors" to find "Category:American male actors"
+  let query = ''
   if (nationality) {
     query += `${nationality.value} `
+  }
+  if (gender && (category.value === 'actors' || category.value === 'musicians')) {
+    query += `${gender.value} `
   }
   query += mappedCategory
 

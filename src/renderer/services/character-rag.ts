@@ -44,24 +44,17 @@ let characterKnowledge: CharacterKnowledge | null = null
 
 /**
  * Load character knowledge from JSON file
- * Works in both browser (fetch) and Node.js (fs) environments
+ * Uses Electron IPC in production, fetch in development
  */
 export async function loadCharacterKnowledge(): Promise<CharacterKnowledge> {
   if (characterKnowledge) return characterKnowledge // Already loaded
   
   try {
-    // Detect environment
-    const isNode = typeof process !== 'undefined' && process.versions && process.versions.node
-    
-    if (isNode) {
-      // Node.js environment - use filesystem
-      const fs = await import('fs')
-      const path = await import('path')
-      const filePath = path.join(__dirname, '../../../public/character-knowledge.json')
-      const data = fs.readFileSync(filePath, 'utf-8')
-      characterKnowledge = JSON.parse(data)
+    // Check if running in Electron (production)
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.loadCharacterKnowledge) {
+      characterKnowledge = await (window as any).electronAPI.loadCharacterKnowledge()
     } else {
-      // Browser environment - use fetch
+      // Development mode - use fetch
       const response = await fetch('/character-knowledge.json')
       if (!response.ok) {
         throw new Error(`Failed to load character knowledge: ${response.status}`)

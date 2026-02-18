@@ -44,24 +44,17 @@ let characterKnowledge: CharacterKnowledge | null = null
 
 /**
  * Load character knowledge from JSON file
- * Works in both browser (fetch) and Node.js (fs) environments
+ * Uses Electron IPC in production, fetch in development
  */
 export async function loadCharacterKnowledge(): Promise<CharacterKnowledge> {
   if (characterKnowledge) return characterKnowledge // Already loaded
   
   try {
-    // Detect environment
-    const isNode = typeof process !== 'undefined' && process.versions && process.versions.node
-    
-    if (isNode) {
-      // Node.js environment - use filesystem
-      const fs = await import('fs')
-      const path = await import('path')
-      const filePath = path.join(__dirname, '../../../public/character-knowledge.json')
-      const data = fs.readFileSync(filePath, 'utf-8')
-      characterKnowledge = JSON.parse(data)
+    // Check if running in Electron (production)
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.loadCharacterKnowledge) {
+      characterKnowledge = await (window as any).electronAPI.loadCharacterKnowledge()
     } else {
-      // Browser environment - use fetch
+      // Development mode - use fetch
       const response = await fetch('/character-knowledge.json')
       if (!response.ok) {
         throw new Error(`Failed to load character knowledge: ${response.status}`)
@@ -188,9 +181,6 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
   if (key === 'fictional') {
     const isFictional = actualValue === 'true' || actualValue === 'yes'
     const matches = isNegative ? char.traits.fictional !== isFictional : char.traits.fictional === isFictional
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: fictional mismatch (has: ${char.traits.fictional}, need: ${isNegative ? 'NOT ' : ''}${isFictional})`)
-    }
     return matches
   }
   
@@ -198,9 +188,6 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
   if (key === 'category' || key === 'occupation_category') {
     const categoryMatches = char.category.toLowerCase().includes(actualValue)
     const matches = isNegative ? !categoryMatches : categoryMatches
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: category mismatch (has: ${char.category}, need: ${isNegative ? 'NOT ' : ''}${actualValue})`)
-    }
     return matches
   }
   
@@ -241,9 +228,23 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     }
 
     const matches = isNegative ? !mediumMatches : mediumMatches
-    if (!matches) {
-      console.log(`[RAG] ${char.name} REJECTED: origin_medium mismatch (${isNegative ? 'NOT ' : ''}${actualValue})`)
+    return matches
+  }
+  
+  // tv_show_type (sitcom, drama, animated)
+  if (key === 'tv_show_type') {
+    const facts = char.distinctive_facts.join(' ').toLowerCase()
+    let typeMatches = false
+    
+    if (actualValue === 'sitcom') {
+      typeMatches = facts.includes('sitcom') || facts.includes('comedy series')
+    } else if (actualValue === 'drama') {
+      typeMatches = facts.includes('drama') && !facts.includes('sitcom')
+    } else if (actualValue === 'animated') {
+      typeMatches = facts.includes('animated') || facts.includes('cartoon')
     }
+    
+    const matches = isNegative ? !typeMatches : typeMatches
     return matches
   }
   
@@ -294,6 +295,31 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     }
   }
   
+  // nationality (american, british, japanese, etc.)
+  if (key === 'nationality') {
+    const facts = char.distinctive_facts.join(' ').toLowerCase()
+    
+    // Map common variations
+    const nationalityMappings: Record<string, string[]> = {
+      'american': ['american', 'united states', 'u.s.', 'usa'],
+      'british': ['british', 'uk', 'united kingdom', 'england', 'english', 'scottish', 'welsh'],
+      'japanese': ['japanese', 'japan'],
+      'russian': ['russian', 'russia', 'soviet'],
+      'french': ['french', 'france'],
+      'german': ['german', 'germany'],
+      'italian': ['italian', 'italy'],
+      'chinese': ['chinese', 'china'],
+      'korean': ['korean', 'korea'],
+      'mexican': ['mexican', 'mexico']
+    }
+    
+    const keywords = nationalityMappings[actualValue] || [actualValue]
+    const nationalityMatches = keywords.some(kw => facts.includes(kw))
+    
+    const matches = isNegative ? !nationalityMatches : nationalityMatches
+    return matches
+  }
+  
   // Default: search in distinctive facts
   const allText = [
     char.name,
@@ -314,7 +340,8 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
 export function getMostInformativeQuestion(
   remainingCandidates: CharacterData[],
   askedQuestions: string[],
-  confirmedTraits: Trait[] = []
+  confirmedTraits: Trait[] = [],
+  turns?: Array<{question: string, answer: string}>
 ): string | null {
   if (remainingCandidates.length === 0) return null
   if (remainingCandidates.length === 1) return null // Ready to guess
@@ -328,6 +355,11 @@ export function getMostInformativeQuestion(
     confirmedTraits
       .filter(t => t.key === 'category' && t.value.startsWith('NOT_'))
       .map(t => t.value.replace('NOT_', ''))
+  )
+  
+  // Check if we have a confirmed positive category
+  const confirmedCategory = confirmedTraits.find(t => 
+    t.key === 'category' && !t.value.startsWith('NOT_') && !t.value.startsWith('not_')
   )
   
   // Also infer ruled-out categories from remaining candidates
@@ -344,6 +376,9 @@ export function getMostInformativeQuestion(
   }
   
   console.log(`[RAG] Ruled out categories:`, Array.from(ruledOutCategories))
+  if (confirmedCategory) {
+    console.log(`[RAG] Confirmed positive category: ${confirmedCategory.value}`)
+  }
   
   const questions: Array<{q: string, test: (c: CharacterData) => boolean, fictionOnly?: boolean, realPersonOnly?: boolean, categoryRequired?: string}> = [
     { q: 'Is your character fictional?', test: (c: CharacterData) => c.traits.fictional, fictionOnly: false },
@@ -354,11 +389,11 @@ export function getMostInformativeQuestion(
     { q: 'Did your character originate in a comic book?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
     { q: 'Is your character from a video game?', test: (c: CharacterData) => c.category === 'video-games', fictionOnly: true },
     { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: false },
-    // Real person questions
-    { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false, realPersonOnly: true },
-    { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false, realPersonOnly: true },
-    { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false, realPersonOnly: true },
-    { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false, realPersonOnly: true },
+    // Real person category questions - mutually exclusive!
+    { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false, realPersonOnly: true, categoryRequired: 'athletes' },
+    { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
+    { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
+    { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     { q: 'Is your character a historical figure (died before 1950)?', test: (c: CharacterData) => {
       const facts = c.distinctive_facts.join(' ')
       return /\d{4}–\d{4}/.test(facts) && facts.includes('195') === false && facts.includes('196') === false
@@ -585,54 +620,162 @@ export function getMostInformativeQuestion(
     excludedQuestions.add('is your character from a sitcom?')
     excludedQuestions.add('is your character from a drama series?')
   }
+
+  // Build mutual exclusivity rules from turn history (for nationality, sports, music genres, etc.)
+  const skipKeywordsFromTurns = new Set<string>()
+  if (turns) {
+    const confirmedAnswers = turns
+      .filter(t => t.answer === 'yes' || t.answer === 'probably')
+      .map(t => t.question.toLowerCase())
+    
+    const deniedAnswers = turns
+      .filter(t => t.answer === 'no' || t.answer === 'probably_not')
+      .map(t => t.question.toLowerCase())
+    
+    const subCategoryConflicts: Record<string, string[]> = {
+      // Nationality/geography (mutually exclusive for most characters)
+      'american': ['british', 'uk', 'united kingdom', 'european', 'europe', 'from europe', 'from the uk', 'from the united kingdom'],
+      'british': ['american', 'usa', 'united states', 'from america'],
+      'uk': ['american', 'usa', 'united states', 'from america'],
+      'united kingdom': ['american', 'usa', 'united states', 'from america'],
+      'europe': ['american', 'usa', 'united states', 'from america'],
+      'european': ['american', 'usa', 'united states', 'from america'],
+      'japanese': ['american', 'british', 'uk', 'european'],
+      // Sports
+      'basketball': ['soccer', 'football', 'baseball', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'soccer': ['basketball', 'baseball', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'football': ['basketball', 'baseball', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'baseball': ['basketball', 'soccer', 'football', 'tennis', 'golf', 'hockey', 'boxing', 'mma'],
+      'tennis': ['basketball', 'soccer', 'football', 'baseball', 'golf', 'hockey', 'boxing', 'mma'],
+      'golf': ['basketball', 'soccer', 'football', 'baseball', 'tennis', 'hockey', 'boxing', 'mma'],
+      // Music genres
+      'rapper': ['rock', 'pop', 'country', 'classical'],
+      'rock': ['rapper', 'hip-hop', 'pop', 'country', 'classical'],
+      'pop': ['rapper', 'hip-hop', 'rock', 'country', 'classical'],
+      'country': ['rapper', 'hip-hop', 'rock', 'pop', 'classical'],
+      // Comic publishers
+      'dc': ['marvel'],
+      'marvel': ['dc'],
+      // Anime series
+      'dragon ball': ['naruto', 'one piece'],
+      'naruto': ['dragon ball', 'one piece'],
+      'one piece': ['dragon ball', 'naruto'],
+    }
+
+    // For confirmed (yes/probably) answers, exclude conflicting keywords
+    for (const confirmedQ of confirmedAnswers) {
+      for (const [keyword, conflicts] of Object.entries(subCategoryConflicts)) {
+        if (confirmedQ.includes(keyword)) {
+          conflicts.forEach(conflict => skipKeywordsFromTurns.add(conflict))
+          console.log(`[RAG] Confirmed "${keyword}" → excluding questions about: ${conflicts.join(', ')}`)
+        }
+      }
+    }
+    
+    // For denied (no/probably_not) answers, exclude the keyword itself
+    for (const deniedQ of deniedAnswers) {
+      for (const keyword of Object.keys(subCategoryConflicts)) {
+        if (deniedQ.includes(keyword)) {
+          skipKeywordsFromTurns.add(keyword)
+          console.log(`[RAG] Denied "${keyword}" → excluding questions about: ${keyword}`)
+        }
+      }
+    }
+  }
   
   for (const {q, test, fictionOnly, realPersonOnly, categoryRequired} of questions) {
     // Skip fiction-only questions if character is confirmed as non-fictional
     if (fictionOnly && isNotFictional) {
-      console.info(`[RAG] Skipping fiction-only question due to logical inference: "${q}"`)
       continue
     }
     
     // Skip real-person-only questions if character is confirmed as fictional
     if (realPersonOnly && isFictional) {
-      console.info(`[RAG] Skipping real-person-only question due to logical inference: "${q}"`)
       continue
     }
     
-    // Skip category-specific questions if that category has been ruled out
-    if (categoryRequired && ruledOutCategories.has(categoryRequired)) {
-      console.info(`[RAG] Skipping ${categoryRequired} question (category ruled out): "${q}"`)
-      continue
+    // Skip category-specific questions if that category has been ruled out OR if a different category is confirmed
+    if (categoryRequired) {
+      if (ruledOutCategories.has(categoryRequired)) {
+        continue
+      }
+      // If we have a confirmed positive category, skip questions for OTHER categories
+      if (confirmedCategory && categoryRequired !== confirmedCategory.value) {
+        continue
+      }
     }
     
     // Skip mutually exclusive questions
     if (excludedQuestions.has(q.toLowerCase())) {
-      console.info(`[RAG] Skipping mutually exclusive question: "${q}"`)
       continue
     }
-    
+
+    // Skip questions containing keywords from turn-based mutual exclusivity  
+    // Use word boundary checks to avoid false positives (e.g., "actor" in "action")
+    const qLower = q.toLowerCase()
+    const shouldSkipFromTurns = Array.from(skipKeywordsFromTurns).some(kw => {
+      const regex = new RegExp(`\\b${kw}\\b`, 'i')
+      return regex.test(qLower)
+    })
+    if (shouldSkipFromTurns) {
+      continue
+    }
+
     // Skip if already asked (check for similar questions, not just exact)
     const normalizedQ = q.toLowerCase().replace(/[()]/g, '').replace(/\s+/g, ' ').trim()
+    
+    // Semantic inverse detection: "Is your character male?" ↔ "Is your character female?"
+    const semanticInverses: Array<[RegExp, RegExp]> = [
+      [/\bmale\b/, /\bfemale\b/],
+      [/\bfemale\b/, /\bmale\b/],
+      [/\bfictional\b/, /\breal\b/],
+      [/\breal\b/, /\bfictional\b/],
+      [/\balive\b/, /\bdead\b/],
+      [/\bdead\b/, /\balive\b/],
+      [/\bhero\b/, /\bvillain\b/],
+      [/\bvillain\b/, /\bhero\b/],
+    ]
+    
     const isAlreadyAsked = askedQuestions.some(aq => {
       const normalizedAq = aq.toLowerCase().replace(/[()]/g, '').replace(/\s+/g, ' ').trim()
-      // Check if questions are very similar (share most key words)
+      
+      // Check exact match
       if (normalizedAq === normalizedQ) return true
+      
       // Check if questions start the same way (e.g., "Is your character still alive...")
       if (normalizedQ.length > 20 && normalizedAq.startsWith(normalizedQ.slice(0, 25))) return true
       if (normalizedAq.length > 20 && normalizedQ.startsWith(normalizedAq.slice(0, 25))) return true
+      
+      // Check semantic inverses
+      for (const [pattern1, pattern2] of semanticInverses) {
+        if (pattern1.test(normalizedQ) && pattern2.test(normalizedAq)) {
+          // Both questions are about the same topic, just inverted
+          const baseQ = normalizedQ.replace(pattern1, '').trim()
+          const baseAq = normalizedAq.replace(pattern2, '').trim()
+          if (baseQ === baseAq) return true
+        }
+      }
+      
       return false
     })
     if (isAlreadyAsked) {
-      console.log(`[RAG] Skipping already-asked question: "${q}"`)
       continue
     }
     
     const yesCount = remainingCandidates.filter(test).length
     const noCount = remainingCandidates.length - yesCount
     
-    // Score is deviation from 50/50 split
+    // Use Shannon entropy for information gain (more accurate than absolute deviation)
+    // Entropy = -p*log2(p) - (1-p)*log2(1-p), higher entropy = more information
     const split = yesCount / remainingCandidates.length
-    const score = Math.abs(0.5 - split)
+    
+    // Avoid log(0) errors
+    const p = Math.max(0.001, Math.min(0.999, split))
+    const entropy = -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p))
+    
+    // Higher entropy = better question (closer to 50/50 split)
+    // Convert to score where lower is better for consistency with old code
+    const score = 1 - entropy  // Max entropy is 1.0, so invert
     
     if (score < bestScore) {
       bestScore = score
@@ -659,7 +802,7 @@ function inferGender(char: CharacterData): 'male' | 'female' | 'unknown' {
 }
 
 /**
- * Get top N character guesses based on confirmed traits
+ * Get top N character guesses from pre-filtered candidates
  * Returns characters sorted by how well they match the traits
  * 
  * CRITICAL: Confidence should scale with trait count AND specificity
@@ -669,9 +812,11 @@ function inferGender(char: CharacterData): 'male' | 'female' | 'unknown' {
  */
 export function getTopGuesses(
   traits: Trait[],
-  topN: number = 3
+  topN: number = 3,
+  preFilteredCandidates?: CharacterData[]
 ): Array<{ name: string; confidence: number; character: CharacterData }> {
-  const candidates = filterCharactersByTraits(traits)
+  // Use pre-filtered candidates if provided, otherwise filter strictly
+  const candidates = preFilteredCandidates || filterCharactersByTraits(traits)
   
   if (candidates.length === 0) return []
   
@@ -789,4 +934,79 @@ export function getCandidateContext(
   ]
   
   return lines.join('\n')
+}
+
+/**
+ * Score how well a character matches the given traits (fuzzy matching)
+ * Returns a score from 0.0 to 1.0
+ */
+export function scoreCharacterMatch(char: CharacterData, traits: Trait[]): number {
+  if (traits.length === 0) return 1.0 // No traits to match against
+  
+  let totalScore = 0
+  let totalWeight = 0
+  
+  for (const trait of traits) {
+    const matches = characterMatchesTrait(char, trait)
+    // Weight by confidence
+    const weight = trait.confidence
+    totalWeight += weight
+    
+    if (matches) {
+      totalScore += weight
+    }
+  }
+  
+  return totalWeight > 0 ? totalScore / totalWeight : 0
+}
+
+/**
+ * Filter characters with fuzzy matching - returns candidates above threshold
+ * More forgiving than strict filterCharactersByTraits
+ */
+export function filterCharactersFuzzy(traits: Trait[], threshold: number = 0.7): CharacterData[] {
+  const allChars = getAllCharacters()
+  
+  console.info(`[RAG-Fuzzy] Filtering ${allChars.length} characters with fuzzy matching (threshold: ${threshold})`)
+  
+  if (traits.length === 0) {
+    return allChars
+  }
+  
+  const scored = allChars.map(char => ({
+    char,
+    score: scoreCharacterMatch(char, traits)
+  }))
+  
+  const filtered = scored
+    .filter(({ score }) => score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .map(({ char }) => char)
+  
+  console.info(`[RAG-Fuzzy] Filtered from ${allChars.length} to ${filtered.length} characters (threshold: ${threshold})`)
+  
+  return filtered
+}
+
+/**
+ * Generate a dynamic question to discriminate between 5-10 similar candidates
+ * Uses LLM to craft a question that splits the candidate pool effectively
+ */
+export async function generateDynamicQuestion(
+  candidates: CharacterData[],
+  askedQuestions: string[]
+): Promise<string | null> {
+  if (candidates.length < 5 || candidates.length > 10) {
+    console.warn(`[RAG-Dynamic] Candidate pool size ${candidates.length} not optimal for dynamic questions (5-10 ideal)`)
+    return null
+  }
+  
+  console.info(`[RAG-Dynamic] Generating dynamic question for ${candidates.length} candidates`)
+  
+  // For now, return null to use static questions
+  // TODO: Implement LLM-based dynamic question generation
+  // This would pass candidate distinctive_facts to LLM and ask it to generate
+  // a discriminating question
+  
+  return null
 }

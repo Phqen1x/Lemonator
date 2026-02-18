@@ -7,11 +7,10 @@ export const HEALTH_ENDPOINT = `${LEMONADE_BASE_URL}/v1/models`
 // Qwen3-4B: Best balance of speed (fast NPU) and reasoning for RAG
 // Phi-4: Good at creative visualization
 export const DETECTIVE_MODEL = 'Qwen3-4B-Instruct-2507-GGUF'
-//export const DETECTIVE_MODEL = 'Qwen2.5-Coder-32B-Instruct-GGUF' // Not available on this system
 export const VISUALIST_MODEL = 'Phi-4-mini-instruct-GGUF'
 // SDXL-Turbo is too slow on CPU (hours per image)
 // Image generation disabled until GPU acceleration is configured
-export const IMAGE_MODEL = 'SDXL-Turbo'
+export const IMAGE_MODEL = 'Flux-2-Klein-4B'
 
 export const CONFIDENCE_THRESHOLD = 0.95  // Must be high enough to avoid false positives
 export const MAX_TURNS = 100  // Allow extensive questioning to narrow down
