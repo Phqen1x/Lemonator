@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Lemonators
+GenericName=AI Character Guessing Game
+Comment=AI detective guesses your character while drawing them
+Exec=lemonators %U
+Icon=lemonators
+Terminal=false
+Categories=Game;LogicGame;
+Keywords=game;ai;guessing;character;akinator;
+StartupNotify=true
+StartupWMClass=Lemonators

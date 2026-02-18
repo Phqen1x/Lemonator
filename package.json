@@ -69,7 +69,17 @@
         "deb"
       ],
       "category": "Game",
-      "maintainer": "Drew VanDine <avandine23@gmail.com>"
+      "maintainer": "Drew VanDine <avandine23@gmail.com>",
+      "desktop": {
+        "entry": {
+          "Name": "Lemonators",
+          "GenericName": "AI Character Guessing Game",
+          "Comment": "AI detective guesses your character while drawing them",
+          "Keywords": "game;ai;guessing;character;akinator;",
+          "Categories": "Game;LogicGame;",
+          "StartupWMClass": "Lemonators"
+        }
+      }
     },
     "win": {
       "target": [
