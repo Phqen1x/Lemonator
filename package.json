@@ -53,6 +53,7 @@
     "productName": "Lemonator",
     "npmRebuild": false,
     "asar": false,
+    "icon": "lemonator.png",
     "directories": {
       "output": "release",
       "buildResources": "build"
