@@ -36,9 +36,9 @@ parts:
   lemonator:
     plugin: nil
     source: .
-    source-type: git
+    build-snaps:
+      - node/22/stable
     build-packages:
-      - npm
       - git
     override-pull: |
       craftctl default
