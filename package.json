@@ -52,6 +52,7 @@
     "appId": "com.lemonators.app",
     "productName": "Lemonators",
     "npmRebuild": false,
+    "asar": false,
     "directories": {
       "output": "release",
       "buildResources": "build"
