@@ -1207,6 +1207,26 @@ async function askNextQuestion(
       )
     }
   }
+  
+  // ALIVE/DEAD LOGIC: Check if character is still alive
+  const aliveQuestions = confirmedAnswers.filter(q => 
+    q.includes('still alive') || q.includes('alive today') || q.includes('living today')
+  )
+  const deadQuestions = confirmedAnswers.filter(q =>
+    (q.includes('died before') || q.includes('dead')) && !q.includes('still alive')
+  )
+  
+  if (aliveQuestions.length > 0) {
+    contradictionRules.push(
+      `Character is STILL ALIVE — do NOT ask about: death dates, died before, historical figures who died, deceased, passed away`
+    )
+    console.log('[Detective-RAG] Added alive rule: Character is alive → no death questions')
+  } else if (deadQuestions.length > 0) {
+    contradictionRules.push(
+      `Character is DECEASED — do NOT ask about: still alive, living today, currently active`
+    )
+    console.log('[Detective-RAG] Added deceased rule: Character is dead → no alive questions')
+  }
 
   if (contradictionRules.length > 0) {
     console.log('[Detective-RAG] Contradiction rules generated:', contradictionRules)
