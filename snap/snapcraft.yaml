@@ -76,10 +76,8 @@ parts:
       npm install
       npm run electron:build:linux
       cp -rp release/linux-unpacked $CRAFT_PART_INSTALL/
-      cp $CRAFT_PART_SRC/lemonator.desktop $CRAFT_PART_INSTALL/
     prime:
       - linux-unpacked
-      - lemonator.desktop
       - -*/chrome-sandbox
       - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/lib
       - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/include
@@ -115,7 +113,6 @@ apps:
   lemonator:
     extensions: [gnome]
     command: bin/launcher
-    desktop: lemonator.desktop
     plugs:
       - network
       - shmem
