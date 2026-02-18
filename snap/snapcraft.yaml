@@ -1,23 +1,43 @@
 name: lemonator
-summary: Akinator-style game
+summary: AI-powered character guessing game with visual generation
+version: 1.0.0
 description: |
-  Lemonator is an Akinator-style game where the user thinks of a person
-  and answers questions posed by an LLM about their character allowing the
-  LLM to narrow down the possible characters until it can successfully
-  guess who your character is using web-searches, databases, and LLM inference.
+  Lemonators is an intelligent character guessing game powered by AI. Think of any 
+  real or fictional character, and the AI detective will ask strategic questions to 
+  identify who you're thinking of. As you answer, the app generates a unique visual 
+  portrait of your character using AI image generation.
+
+  **Key Features**
+
+  * Smart question generation using Google Gemini AI
+  * 1,300+ character database with trait-based matching
+  * Wikipedia integration for discovering famous personalities
+  * Real-time AI-generated character portraits via SDXL-Turbo
+  * Logical deduction engine that learns from your answers
+  * Confidence scoring to determine optimal guess timing
+  * Beautiful Electron desktop interface with React
 
   **Requirements**
 
-  This snap requires the lemonade-server snap to be installed and running.
-  The server provides the AI backend that powers this desktop client.
+  This snap requires the lemonade-server snap to be installed and running on 
+  localhost:8080. The server provides the SDXL-Turbo image generation backend.
 
-  To install lemonater:
+  To install both:
 
     sudo snap install lemonator
+    sudo snap install lemonade-server
 
-  You must have lemonade-server installed to use this.
+  You'll also need a Google Gemini API key set in your environment or config.
 
-  **Features**
+  **How to Play**
+
+  1. Think of any character (real or fictional)
+  2. Answer yes/no/maybe/unsure questions from the AI detective
+  3. Watch as the AI narrows down possibilities and generates a portrait
+  4. See if the AI can guess your character correctly!
+
+  The AI combines database searching, Wikipedia discovery, and logical reasoning
+  to identify characters in as few questions as possible.
 
 adopt-info: lemonator
 grade: stable
@@ -42,8 +62,7 @@ parts:
       - git
     override-pull: |
       craftctl default
-      # VERSION=$(craftctl get version)
-      VERSION=0.0.1
+      VERSION=$(craftctl get version)
       if [ -z $VERSION ]; then
         VERSION=$(git describe --tags --abbrev=10)
         craftctl set version=$VERSION
@@ -61,6 +80,7 @@ parts:
       npm install
       npm run electron:build:linux
       cp -rp release/linux-unpacked $CRAFT_PART_INSTALL/
+      cp $CRAFT_PART_SRC/lemonator.desktop $CRAFT_PART_INSTALL/
     prime:
       - linux-unpacked
       - -*/chrome-sandbox
@@ -97,6 +117,7 @@ apps:
   lemonator:
     extensions: [gnome]
     command: bin/launcher
+    desktop: lemonator.desktop
     plugs:
       - network
       - shmem
