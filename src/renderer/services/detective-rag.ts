@@ -861,21 +861,37 @@ async function askNextQuestion(
   // But be conservative - only use LLM when database has limited options
   let hybridGuesses: Guess[] = ragGuesses
   
-  // Add Wikipedia names with medium confidence (0.5-0.7 range)
-  // These are from verified Wikipedia lists, so more reliable than LLM hallucinations
+  // Add Wikipedia names with varying confidence based on trait matching
+  // Use a simple heuristic: check if name appears in database first for trait scoring
   if (wikipediaNames.length > 0) {
     const wikipediaGuesses: Guess[] = wikipediaNames
       .filter(name => !rejectedGuesses.some(r => r.toLowerCase() === name.toLowerCase()))
       .filter(name => !ragGuesses.some(g => g.name.toLowerCase() === name.toLowerCase()))
-      .slice(0, 10) // Limit to top 10 Wikipedia additions
-      .map((name, index) => ({
-        name,
-        confidence: 0.65 - (index * 0.02) // Decreasing confidence: 0.65, 0.63, 0.61...
-      }))
+      .slice(0, 20) // Check top 20 Wikipedia names
+      .map((name, index) => {
+        // Try to find in database for trait-based scoring
+        const dbChar = getCharacterByName(name)
+        let confidence: number
+        
+        if (dbChar) {
+          // Character is in database - use trait-based scoring
+          const score = scoreCharacterMatch(dbChar, traits)
+          confidence = Math.max(0.45, Math.min(0.70, score)) // Clamp 0.45-0.70
+        } else {
+          // Not in database - use position-based heuristic with more variance
+          // Earlier in list = higher confidence (Wikipedia lists are usually ordered by prominence)
+          const positionScore = 1.0 - (index / 20) // 1.0 → 0.0 over 20 items
+          confidence = 0.50 + (positionScore * 0.15) // Range: 0.50-0.65
+        }
+        
+        return { name, confidence }
+      })
+      .sort((a, b) => b.confidence - a.confidence) // Sort by confidence
+      .slice(0, 10) // Take top 10 after scoring
     
     if (wikipediaGuesses.length > 0) {
       console.info(`[Wikipedia] Adding ${wikipediaGuesses.length} Wikipedia characters to guess pool`)
-      console.info(`[Wikipedia] Names:`, wikipediaGuesses.slice(0, 5).map(g => g.name).join(', '))
+      console.info(`[Wikipedia] Top names:`, wikipediaGuesses.slice(0, 5).map(g => `${g.name} (${Math.round(g.confidence * 100)}%)`))
       
       // Merge Wikipedia guesses with database guesses
       const combined = [...ragGuesses, ...wikipediaGuesses]

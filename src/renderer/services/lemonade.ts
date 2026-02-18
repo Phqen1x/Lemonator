@@ -43,8 +43,8 @@ export async function chatCompletion(req: ChatCompletionRequest): Promise<ChatCo
 }
 
 export async function generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResponse> {
-  // Use shorter timeout for image generation (30 seconds) - if server is slow, fail fast
-  return fetchJSON<ImageGenerationResponse>(IMAGE_ENDPOINT, req, 30000)
+  // SDXL-Turbo on CPU takes 60-90 seconds per image
+  return fetchJSON<ImageGenerationResponse>(IMAGE_ENDPOINT, req, 120000)
 }
 
 export async function checkHealth(): Promise<boolean> {

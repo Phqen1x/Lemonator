@@ -127,10 +127,87 @@ async function extractNamesFromPage(pageTitle: string): Promise<string[]> {
         const linkTitle = link.title
         
         // Filter out non-person links
-        if (linkTitle.startsWith('List of') || 
+        // Must be strict - only accept actual person names, not meta pages
+        if (linkTitle.startsWith('List ') ||  // "List of X" or "Lists of X"
             linkTitle.startsWith('Category:') ||
+            linkTitle.startsWith('Portal:') ||
+            linkTitle.startsWith('Wikipedia:') ||
+            linkTitle.startsWith('Template:') ||
+            linkTitle.startsWith('File:') ||
+            linkTitle.startsWith('Help:') ||
             linkTitle.includes('disambiguation') ||
-            linkTitle.length < 3) {
+            linkTitle.includes(' by ') ||  // "Actors by nationality"
+            linkTitle.includes(' in ') ||  // "Films in 2020"
+            linkTitle.includes(' of ') ||  // "Music of the United States"
+            linkTitle.endsWith(' actors') ||  // "American male actors" (category)
+            linkTitle.endsWith(' actresses') ||
+            linkTitle.endsWith(' musicians') ||
+            linkTitle.endsWith(' players') ||  // "American football players"
+            linkTitle.endsWith(' athletes') ||
+            linkTitle.endsWith(' music') ||
+            linkTitle.endsWith(' football') ||
+            linkTitle.endsWith(' basketball') ||
+            linkTitle.endsWith(' baseball') ||
+            linkTitle.endsWith(' racing') ||
+            linkTitle.endsWith(' Prize') ||
+            linkTitle.endsWith(' Award') ||
+            linkTitle.endsWith(' Awards') ||
+            linkTitle.includes(' song)') ||  // "(song)" suffix
+            linkTitle.includes(' (song)') ||  // "Title (song)" format
+            linkTitle.includes(' album)') ||  // "(album)" suffix
+            linkTitle.includes(' film)') ||  // "(film)" suffix
+            linkTitle.includes(' band)') ||  // "(band)" suffix
+            linkTitle.includes(' company)') ||  // "(company)" suffix
+            linkTitle.endsWith('s') && linkTitle.length < 10 ||  // Plural words < 10 chars (likely concepts)
+            linkTitle === 'African Americans' ||  // Specific ethnic/demographic terms
+            linkTitle === 'African-Americans' ||
+            linkTitle.includes('English') ||
+            linkTitle.includes('American ') && !linkTitle.includes(',') ||  // "American football" but not "Smith, American actor"
+            linkTitle.includes('African-American ') && !linkTitle.includes(',') ||
+            linkTitle.includes('British ') && !linkTitle.includes(',') ||
+            linkTitle.includes('-side ') ||  // "A-side and B-side"
+            linkTitle.includes(' Colleges') ||
+            linkTitle.includes(' list') ||
+            linkTitle.length < 3 ||
+            linkTitle.length > 40) {  // Person names rarely exceed 40 chars
+          continue
+        }
+        
+        // Additional validation: must look like a person name
+        // (Contains at least one space, or is all caps like "SEAL")
+        const hasSpace = linkTitle.includes(' ')
+        const isAllCaps = linkTitle === linkTitle.toUpperCase() && linkTitle.length < 10
+        const looksLikeName = hasSpace || isAllCaps
+        
+        if (!looksLikeName) {
+          continue
+        }
+        
+        // Additional filter: starts with number (likely year/ranking)
+        if (/^\d/.test(linkTitle)) {
+          continue
+        }
+        
+        // Filter out common non-person patterns
+        const lowerTitle = linkTitle.toLowerCase()
+        const badWords = ['history', 'culture', 'genre', 'style', 'movement', 'period', 
+                         'century', 'decade', 'era', 'age', 'music', 'art', 'literature',
+                         'philosophy', 'politics', 'religion', 'language', 'country',
+                         'state', 'city', 'organization', 'company', 'corporation',
+                         'association', 'society', 'club', 'team', 'league', 'conference',
+                         'animations', 'studios', 'productions', 'records', 'entertainment',
+                         'media', 'jazz', 'church', 'seminary', 'republic', 'house', 'episcopal',
+                         'theological', 'methodist', 'creole', 'gospel']
+        
+        let isBadWord = false
+        for (const word of badWords) {
+          if (lowerTitle.includes(word) && !lowerTitle.includes(',')) {
+            isBadWord = true
+            break
+          }
+        }
+        
+        if (isBadWord) {
           continue
         }
         
