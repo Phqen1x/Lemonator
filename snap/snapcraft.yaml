@@ -1,6 +1,6 @@
 name: lemonator
 summary: AI-powered character guessing game with visual generation
-version: 1.0.0
+version: 0.0.1
 description: |
   Lemonators is an intelligent character guessing game powered by AI. Think of any 
   real or fictional character, and the AI detective will ask strategic questions to 
@@ -18,11 +18,10 @@ description: |
   **Requirements**
 
   This snap requires the lemonade-server snap to be installed and running on 
-  localhost:8080. The server provides the SDXL-Turbo image generation, Qwen3-4B, and Phi-4-mini models.
+  localhost:8001. The server provides the Flux-2-Klein-4B image generation, Qwen3-4B, and Phi-4-mini models.
 
-  To install both:
+  To install lemonade-server:
 
-    sudo snap install lemonator
     sudo snap install lemonade-server
 
   **How to Play**
