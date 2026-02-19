@@ -1196,9 +1196,9 @@ async function askNextQuestion(
   const fictionalTrait = traits.find(t => t.key === 'fictional')
   if (fictionalTrait && fictionalTrait.value === 'false' && fictionalTrait.confidence >= 0.85) {
     contradictionRules.push(
-      `Character is REAL (not fictional) — do NOT ask about: Marvel, DC Comics, anime, manga, video games, TV shows (as origin), movie characters, book characters, comics`
+      `Character is REAL (not fictional) — do NOT ask about: Marvel, DC Comics, anime, manga, video games, TV shows (as origin), movie characters, book characters, comics, superpowers, supernatural abilities, magic powers`
     )
-    console.log('[Detective-RAG] Added fictionality rule: Character is real → no fictional origins')
+    console.log('[Detective-RAG] Added fictionality rule: Character is real → no fictional origins or superpowers')
   } else if (fictionalTrait && fictionalTrait.value === 'true' && fictionalTrait.confidence >= 0.85) {
     const originMediums = traits.filter(t => t.key === 'origin_medium' && !t.value.startsWith('NOT_'))
     if (originMediums.length > 0) {
