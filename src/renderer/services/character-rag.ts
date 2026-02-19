@@ -1031,11 +1031,15 @@ export function getTopGuesses(
   const guesses = candidates.map(char => {
     let matchScore = 0
     let totalWeight = 0
-    
+
     for (const trait of traits) {
-      const weight = trait.confidence || 0.9
+      // Deduced NOT_ traits provide very little discriminating power
+      // (e.g., all non-fictional characters pass NOT_anime equally)
+      // Weight them minimally so they don't drown out real trait signals
+      const isDeducedNegative = trait.value.startsWith('NOT_')
+      const weight = isDeducedNegative ? 0.1 : (trait.confidence || 0.9)
       totalWeight += weight
-      
+
       // Check if character matches this specific trait
       if (characterMatchesTrait(char, trait)) {
         matchScore += weight
@@ -1048,10 +1052,12 @@ export function getTopGuesses(
     // CRITICAL: Start with LOW base confidence
     // Only increase as we gather more discriminating traits
     let baseConfidence = 0.25 // Start at 25%
-    
-    // Scale confidence based on number of CONFIRMED traits
-    // More traits = more confidence, but conservative scaling
-    const traitCount = traits.length
+
+    // Scale confidence based on number of DISCRIMINATING traits
+    // Don't count deduced NOT_ traits — they inflate the count without adding
+    // real discriminating power (e.g., fictional=false deduces 9 NOT_origin_medium
+    // traits that all non-fictional characters pass equally)
+    const traitCount = traits.filter(t => !t.value.startsWith('NOT_')).length
     
     if (traitCount >= 8) {
       baseConfidence = 0.55 // 8+ traits → start at 55%
