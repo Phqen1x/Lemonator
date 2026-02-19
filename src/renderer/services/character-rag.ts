@@ -298,24 +298,39 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
   // nationality (american, british, japanese, etc.)
   if (key === 'nationality') {
     const facts = char.distinctive_facts.join(' ').toLowerCase()
-    
-    // Map common variations
-    const nationalityMappings: Record<string, string[]> = {
-      'american': ['american', 'united states', 'u.s.', 'usa'],
-      'british': ['british', 'uk', 'united kingdom', 'england', 'english', 'scottish', 'welsh'],
-      'japanese': ['japanese', 'japan'],
-      'russian': ['russian', 'russia', 'soviet'],
-      'french': ['french', 'france'],
-      'german': ['german', 'germany'],
-      'italian': ['italian', 'italy'],
-      'chinese': ['chinese', 'china'],
-      'korean': ['korean', 'korea'],
-      'mexican': ['mexican', 'mexico']
-    }
-    
-    const keywords = nationalityMappings[actualValue] || [actualValue]
-    const nationalityMatches = keywords.some(kw => facts.includes(kw))
-    
+    const dbNationality = (char.traits.nationality || '').toLowerCase()
+
+    // Map all variations of a nationality to a canonical group.
+    // Both the trait value AND the database nationality field are resolved
+    // to the same group so "american" matches "United States" and vice versa.
+    const nationalityGroups: string[][] = [
+      ['american', 'united states', 'u.s.', 'usa', 'america'],
+      ['british', 'uk', 'united kingdom', 'england', 'english', 'scottish', 'welsh', 'great britain', 'united kingdom of great britain'],
+      ['japanese', 'japan'],
+      ['russian', 'russia', 'soviet', 'soviet union'],
+      ['french', 'france'],
+      ['german', 'germany', 'nazi germany'],
+      ['italian', 'italy', 'republic of florence', 'duchy of florence', 'republic of genoa'],
+      ['chinese', 'china', 'people\'s republic of china', 'republic of china'],
+      ['korean', 'korea', 'north korea', 'south korea'],
+      ['mexican', 'mexico'],
+      ['australian', 'australia'],
+      ['canadian', 'canada'],
+      ['indian', 'india'],
+      ['brazilian', 'brazil'],
+      ['spanish', 'spain'],
+    ]
+
+    // Find which group the trait value belongs to
+    const matchGroup = nationalityGroups.find(group =>
+      group.some(variant => variant === actualValue)
+    ) || [actualValue]
+
+    // Check against distinctive_facts AND the database nationality field
+    const nationalityMatches =
+      matchGroup.some(kw => facts.includes(kw)) ||
+      matchGroup.some(kw => dbNationality.includes(kw))
+
     const matches = isNegative ? !nationalityMatches : nationalityMatches
     return matches
   }
