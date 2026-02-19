@@ -25,6 +25,7 @@ character-knowledge\ (*.json
 package-lock.json
 
 # Release Packages
+release/
 *.snap
 *.AppImage
 *.deb
