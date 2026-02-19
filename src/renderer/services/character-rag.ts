@@ -333,6 +333,142 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
 }
 
 /**
+ * Determine if a question should be skipped based on confirmed traits and game state.
+ * Encodes logical implication rules to prevent nonsensical questions like:
+ *   - "Does your character have superpowers?" when fictional=false (real people don't have superpowers)
+ *   - "Is your character a historical figure (died before 1950)?" when character is confirmed alive
+ */
+export function shouldSkipQuestion(
+  question: string,
+  confirmedTraits: Trait[],
+  turns?: Array<{ question: string; answer: string }>
+): boolean {
+  const qLower = question.toLowerCase()
+
+  const isNotFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'false' && t.confidence >= 0.7)
+  const isFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'true' && t.confidence >= 0.7)
+  const hasNoPowers = confirmedTraits.some(t => t.key === 'has_powers' && t.value === 'false' && t.confidence >= 0.7)
+  const isHuman = confirmedTraits.some(t => t.key === 'species' && t.value === 'human' && t.confidence >= 0.7)
+
+  // Determine alive/dead status from turn history (confirmed yes answers)
+  let isAlive = false
+  let isDead = false
+  if (turns) {
+    for (const turn of turns) {
+      const tqLower = turn.question.toLowerCase()
+      const isYes = turn.answer === 'yes' || turn.answer === 'probably'
+      const isNo = turn.answer === 'no' || turn.answer === 'probably_not'
+      if (isYes && (tqLower.includes('still alive') || tqLower.includes('alive today') || tqLower.includes('living today'))) {
+        isAlive = true
+      }
+      if (isNo && (tqLower.includes('still alive') || tqLower.includes('alive today') || tqLower.includes('living today'))) {
+        isDead = true
+      }
+      if (isYes && (tqLower.includes('died') || tqLower.includes('deceased') || tqLower.includes('passed away'))) {
+        isDead = true
+      }
+      if (isNo && (tqLower.includes('died') || tqLower.includes('deceased'))) {
+        isAlive = true
+      }
+    }
+  }
+
+  // --- Rule 1: Real people (fictional=false) can't have superpowers, magic, etc. ---
+  if (isNotFictional) {
+    const fictionalOnlyKeywords = [
+      'superpower', 'super power', 'supernatural', 'magic', 'magical',
+      'teleport', 'telepathy', 'telekinesis', 'superhuman', 'super strength',
+      'super speed', 'invisibility', 'shapeshifting', 'regeneration', 'immortal',
+      'fly ', 'flight', 'x-ray vision', 'laser', 'energy blast',
+      'fire power', 'ice power', 'lightning power', 'mind reading',
+      'secret identity', 'alter ego', 'transform', 'power up',
+    ]
+    if (fictionalOnlyKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+    // Real people don't originate from fictional media (as characters)
+    const fictionalOriginKeywords = [
+      'originate in an anime', 'originate in a manga', 'originate in a comic',
+      'originate in a video game', 'originate in a cartoon',
+      'from an anime', 'from a manga', 'from a comic book',
+      'from a video game', 'from a cartoon',
+    ]
+    if (fictionalOriginKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+  }
+
+  // --- Rule 2: Alive characters can't have died ---
+  if (isAlive) {
+    const deathKeywords = [
+      'died before', 'died in', 'death', 'deceased', 'passed away',
+      'historical figure (died', 'historical figure who died',
+      'killed in', 'assassinated', 'executed',
+    ]
+    // Also catch "historical figure (died before 1950)" pattern
+    if (deathKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+    // "Is your character a historical figure?" with death implication
+    if (qLower.includes('historical figure') && qLower.includes('died')) {
+      return true
+    }
+  }
+
+  // --- Rule 3: Dead characters can't be alive ---
+  if (isDead) {
+    const aliveKeywords = [
+      'still alive', 'alive today', 'living today', 'currently active',
+      'currently in office',
+    ]
+    if (aliveKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+  }
+
+  // --- Rule 4: Characters without powers ---
+  if (hasNoPowers) {
+    const powerKeywords = [
+      'superpower', 'super power', 'supernatural', 'magic', 'magical',
+      'fly ', 'flight', 'teleport', 'telepathy', 'telekinesis',
+      'super strength', 'super speed', 'invisibility', 'shapeshifting',
+      'time control', 'regeneration', 'immortal', 'superhuman',
+      'mind reading', 'laser', 'energy blast', 'x-ray vision',
+      'enhanced senses', 'fire power', 'ice power', 'lightning power',
+    ]
+    if (powerKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+  }
+
+  // --- Rule 5: Human characters aren't non-human species ---
+  if (isHuman) {
+    const nonHumanKeywords = [
+      'alien', 'robot', 'android', 'cyborg', 'wings', 'tail',
+      'scales', 'horns', 'fangs', 'claws', 'non-human', 'non human',
+    ]
+    if (nonHumanKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+  }
+
+  // --- Rule 6: Fictional characters don't hold real-world political office or win real awards ---
+  if (isFictional) {
+    const realWorldKeywords = [
+      'won an oscar', 'won a grammy', 'won an emmy', 'won a nobel',
+      'academy award', 'grammy award', 'emmy award', 'nobel prize',
+      'elected president', 'served as president', 'served in office',
+      'currently in office',
+    ]
+    if (realWorldKeywords.some(kw => qLower.includes(kw))) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
  * Get the most distinctive questions to ask based on remaining candidates
  * Uses information theory to find questions that split candidates ~50/50
  * Also applies logical inference to skip irrelevant questions
@@ -684,11 +820,16 @@ export function getMostInformativeQuestion(
   }
   
   for (const {q, test, fictionOnly, realPersonOnly, categoryRequired} of questions) {
+    // Skip questions that violate logical implication rules (e.g., superpowers for real people, death for alive)
+    if (shouldSkipQuestion(q, confirmedTraits, turns)) {
+      continue
+    }
+
     // Skip fiction-only questions if character is confirmed as non-fictional
     if (fictionOnly && isNotFictional) {
       continue
     }
-    
+
     // Skip real-person-only questions if character is confirmed as fictional
     if (realPersonOnly && isFictional) {
       continue

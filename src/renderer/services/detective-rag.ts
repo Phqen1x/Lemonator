@@ -21,7 +21,8 @@ import {
   getMostInformativeQuestion,
   getCharacterByName,
   generateDynamicQuestion,
-  scoreCharacterMatch
+  scoreCharacterMatch,
+  shouldSkipQuestion
 } from './character-rag'
 import { getWikipediaSupplementalCharacters } from './wikipedia'
 
@@ -154,6 +155,13 @@ Don't ask contradictory questions:
 - If sitcom confirmed → don't ask about drama or animated shows
 - If drama confirmed → don't ask about sitcoms or animated shows
 - If superhero confirmed → focus on DC/Marvel, not other categories
+
+**CROSS-TRAIT LOGICAL INFERENCE (CRITICAL):**
+- If fictional=false (real person): NEVER ask about superpowers, supernatural abilities, magic, secret identity, anime/comic/video game origins
+- If character confirmed STILL ALIVE: NEVER ask "Is your character a historical figure (died before 1950)?" or any question implying they are dead/deceased
+- If character confirmed DEAD/DECEASED: NEVER ask "Is your character still alive?" or "currently active/in office"
+- If has_powers=false: NEVER ask about flight, teleportation, super strength, telepathy, magic, or any superpower
+- If fictional=true: NEVER ask about winning real awards (Oscar, Grammy), being elected to real political office
 
 **OUTPUT FORMAT:**
 Return ONLY valid JSON:
@@ -709,6 +717,11 @@ async function askNextQuestion(
         if (askedQuestions.some(asked => asked.includes(qLower.slice(0, 20)))) {
           return false
         }
+        // Skip questions that violate logical implication rules
+        if (shouldSkipQuestion(q, traits, turns)) {
+          console.info(`[Detective-RAG] Skipping broad question (logical implication): "${q}"`)
+          return false
+        }
         // Skip "based on real person" if we know they're NOT fictional (i.e., they ARE real)
         if (qLower.includes('based on a real person') && hasFictionalFalse) {
           console.info('[Detective-RAG] Skipping "based on real person" - already know character is NOT fictional (i.e., is real)')
@@ -745,8 +758,9 @@ async function askNextQuestion(
         'Is your character associated with a particular emotion (happiness, anger, etc.)?',
       ]
       
-      const nextGenericQuestion = genericQuestions.find(q => 
-        !askedQuestions.some(asked => asked.includes(q.toLowerCase().slice(0, 15)))
+      const nextGenericQuestion = genericQuestions.find(q =>
+        !askedQuestions.some(asked => asked.includes(q.toLowerCase().slice(0, 15))) &&
+        !shouldSkipQuestion(q, traits, turns)
       )
       
       if (nextGenericQuestion) {
@@ -799,7 +813,8 @@ async function askNextQuestion(
       }
       
       const nextDynamicQuestion = dynamicQuestions.find(q =>
-        !askedQuestions.some(asked => asked.includes(q.toLowerCase().slice(0, 20)))
+        !askedQuestions.some(asked => asked.includes(q.toLowerCase().slice(0, 20))) &&
+        !shouldSkipQuestion(q, traits, turns)
       )
       
       if (nextDynamicQuestion) {
@@ -1310,7 +1325,7 @@ Return your response as JSON.`
     if (!json || !json.question) {
       console.warn('[Detective-RAG] Invalid response, using fallback question')
       return {
-        question: getFallbackQuestion(turns.map(t => t.question), traits),
+        question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
         topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
       }
     }
@@ -1321,7 +1336,7 @@ Return your response as JSON.`
     if (wordCount > 20) {
       console.warn(`[Detective-RAG] Question too long (${wordCount} words), using fallback`)
       return {
-        question: getFallbackQuestion(turns.map(t => t.question), traits),
+        question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
         topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
       }
     }
@@ -1349,7 +1364,7 @@ Return your response as JSON.`
       } else {
         console.warn('[Detective-RAG] Character not in top guesses or low confidence - using fallback question')
         return {
-          question: getFallbackQuestion(turns.map(t => t.question), traits),
+          question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
           topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
         }
       }
@@ -1362,7 +1377,7 @@ Return your response as JSON.`
       console.warn(`[Detective-RAG] LLM tried to ask character-name question: "${questionText}" — rejecting`)
       console.warn('[Detective-RAG] Character-name questions must go through formal guess logic, not LLM questions')
       return {
-        question: getFallbackQuestion(turns.map(t => t.question), traits),
+        question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
         topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
       }
     }
@@ -1379,7 +1394,18 @@ Return your response as JSON.`
       console.warn(`[Detective-RAG] Duplicate question detected: "${questionText}"`)
       console.warn('[Detective-RAG] Using fallback to avoid repeat')
       return {
-        question: getFallbackQuestion(turns.map(t => t.question), traits),
+        question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
+        topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
+      }
+    }
+
+    // CRITICAL: Post-LLM validation — reject questions that violate logical implications
+    // The LLM may ignore prompt instructions, so enforce rules in code
+    if (shouldSkipQuestion(questionText, traits, turns)) {
+      console.warn(`[Detective-RAG] LLM question violates logical implication rules: "${questionText}"`)
+      console.warn('[Detective-RAG] Using fallback to avoid illogical question')
+      return {
+        question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
         topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
       }
     }
@@ -1391,7 +1417,7 @@ Return your response as JSON.`
   } catch (error) {
     console.error('[Detective-RAG] askNextQuestion error:', error)
     return {
-      question: getFallbackQuestion(turns.map(t => t.question), traits),
+      question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
       topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
     }
   }
@@ -1481,16 +1507,16 @@ const FALLBACK_QUESTIONS = [
   'Has your character won major awards?'
 ]
 
-function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = []): string {
+function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], turns?: Array<{ question: string; answer: AnswerValue }>): string {
   const askedNormalized = askedQuestions.map(q => normalizeQuestion(q))
-  
+
   // Check if category is confirmed
-  const confirmedCategory = traits.find(t => 
-    t.key === 'category' && 
+  const confirmedCategory = traits.find(t =>
+    t.key === 'category' &&
     !t.value.startsWith('NOT_') &&
     t.confidence >= 0.85
   )
-  
+
   // Category questions to skip if category is already confirmed
   const categoryQuestions = [
     'is your character from an anime or manga?',
@@ -1502,24 +1528,30 @@ function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = []): st
     'is your character from a tv show?',
     'is your character from a video game?'
   ].map(q => normalizeQuestion(q))
-  
+
   for (const q of FALLBACK_QUESTIONS) {
     const qNormalized = normalizeQuestion(q)
-    
+
     // Skip if already asked (using same normalization as duplicate detection)
     if (askedNormalized.includes(qNormalized)) {
       continue
     }
-    
+
     // Skip category questions if category is already confirmed
     if (confirmedCategory && categoryQuestions.includes(qNormalized)) {
       console.log(`[Detective-RAG] Skipping category question "${q}" - category already confirmed as ${confirmedCategory.value}`)
       continue
     }
-    
+
+    // Skip questions that violate logical implication rules
+    if (shouldSkipQuestion(q, traits, turns)) {
+      console.log(`[Detective-RAG] Skipping fallback question (logical implication): "${q}"`)
+      continue
+    }
+
     return q
   }
-  
+
   // All fallback questions exhausted - return a generic one
   return 'Is your character well-known internationally?'
 }

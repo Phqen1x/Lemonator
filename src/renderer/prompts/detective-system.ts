@@ -162,8 +162,11 @@ Rule: Once ANY question in a realm is asked (specific OR broad), move to a DIFFE
   
 LOGICAL INFERENCE - Never Ask Incompatible Questions:
   IF species=human confirmed: DON'T ask about wings, tail, scales, pointed ears, horns, claws, fangs
-  IF has_powers=false confirmed: DON'T ask about flight, teleportation, super strength, telepathy, magic
-  IF fictional=false (real person): DON'T ask about magic, supernatural, dragons, vampires, fantasy
+  IF has_powers=false confirmed: DON'T ask about flight, teleportation, super strength, telepathy, magic, superpowers, supernatural abilities
+  IF fictional=false (real person): DON'T ask about magic, supernatural, dragons, vampires, fantasy, superpowers, secret identity, alter ego, anime origin, comic book origin, video game origin
+  IF character is confirmed STILL ALIVE: DON'T ask about death, "died before", "historical figure (died before X)", deceased, passed away, assassinated — a living person cannot have died!
+  IF character is confirmed DEAD/DECEASED: DON'T ask about "still alive", "alive today", "living today", "currently active", "currently in office"
+  IF fictional=true (fictional character): DON'T ask about winning real awards (Oscar, Grammy, Emmy, Nobel), being elected to real political office, or serving as a real-world president
   
 Examples demonstrating the WRONG way vs RIGHT way:
 
