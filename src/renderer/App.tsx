@@ -10,6 +10,7 @@ import RevealScreen from './components/RevealScreen'
 import StatusBar from './components/StatusBar'
 import TitleBar from './components/TitleBar'
 import QuestionBubble from './components/QuestionBubble'
+import NewGameButton from './components/NewGameButton'
 
 function GameApp() {
   const state = useGameState()
@@ -33,6 +34,7 @@ function GameApp() {
             <QuestionBubble />
             <AnswerButtons onAnswer={submitAnswer} />
             <Canvas />
+            <NewGameButton onNewGame={resetGame} />
           </div>
           <div className="chat-column">
             <ChatLog />

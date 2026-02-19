@@ -599,3 +599,36 @@ body {
 .title-bar-button svg {
   display: block;
 }
+
+/* ── New Game Button ─────────────────────────────────── */
+
+.new-game-button-container {
+  display: flex;
+  justify-content: center;
+  order: 4;
+  margin-top: 8px;
+}
+
+.new-game-button {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.new-game-button:hover {
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+.new-game-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
