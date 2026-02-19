@@ -7,6 +7,35 @@ import { renderCaricature, renderSimplePortrait } from '../services/artist'
 import { CONFIDENCE_THRESHOLD, ENABLE_IMAGE_GENERATION } from '../../shared/constants'
 import type { AnswerValue, Trait } from '../types/game'
 
+/** Check if text contains a trait keyword using word boundaries.
+ * Prevents false positives like 'male' matching 'Malek'. */
+function containsTraitKeyword(text: string, keywords: string[]): boolean {
+  const lower = text.toLowerCase()
+  return keywords.some(kw => {
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp('\\b' + escaped + '\\b').test(lower)
+  })
+}
+
+/**
+ * Shared trait-descriptor keywords used to distinguish "Is your character X?"
+ * questions (trait questions) from character name guesses.
+ * Must be kept in sync with isCharacterNameQuestion in detective-rag.ts.
+ */
+const TRAIT_KEYWORDS = [
+  'american', 'british', 'male', 'female', 'fictional', 'real',
+  'an actor', 'an actress', 'an athlete', 'a musician', 'a singer',
+  'a politician', 'a superhero', 'a villain', 'a hero', 'a leader',
+  'in a band', 'a rapper',
+  'from a', 'from an', 'from the', 'originate in',
+  'known for', 'known primarily', 'primarily', 'well-known',
+  'internationally', 'associated with', 'part of',
+  'historical', 'a historical', 'figure', 'person', 'individual',
+  'someone', 'anybody', 'character who', 'character that',
+  'alive', 'dead', 'still alive',
+  'active', 'famous', 'known', 'celebrated', 'renowned',
+]
+
 export function useGameLoop() {
   const state = useGameState()
   const dispatch = useGameDispatch()
@@ -52,12 +81,7 @@ export function useGameLoop() {
       // Check if first question is somehow a guess (very unlikely but handle it)
       const guessMatch = question.match(/^Is your character (.+)\?$/i)
       const guessName = guessMatch?.[1]?.trim()
-      const traitKeywords = [
-        'american', 'british', 'male', 'female', 'fictional', 'real', 'an actor', 'an athlete',
-        'a musician', 'a politician', 'a superhero', 'a villain', 'from a', 'from an', 'from the',
-        'known for', 'alive', 'dead', 'still alive', 'well-known', 'famous',
-      ]
-      const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
+      const isCharacterGuessQuestion = guessName && !containsTraitKeyword(guessName, TRAIT_KEYWORDS)
 
       if (isCharacterGuessQuestion && guessName) {
         console.log(`[UI] 🎯 Turn 1: GUESS ON FIRST TURN - "${question}" → Guessing: ${guessName}`)
@@ -133,17 +157,7 @@ export function useGameLoop() {
       // Pattern: "Is your character [Name]?" where Name is not a trait keyword
       const guessMatch = question.match(/^Is your character (.+)\?$/i)
       const guessName = guessMatch?.[1]?.trim()
-      const traitKeywords = [
-        'american', 'male', 'female', 'fictional', 'real',
-        'an actor', 'an athlete', 'a musician', 'a politician', 'a superhero',
-        'from a', 'from an', 'from the', 'known for', 'alive', 'dead', 'still alive',
-        'a villain', 'a hero', 'a leader', 'in a band', 'a rapper',
-        'well-known', 'internationally', 'primarily', 'associated with', 'part of',
-        'historical', 'a historical', 'figure', 'person', 'individual',
-        'someone', 'anybody', 'character who', 'character that',
-        'active', 'famous', 'known', 'celebrated', 'renowned',
-      ]
-      const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
+      const isCharacterGuessQuestion = guessName && !containsTraitKeyword(guessName, TRAIT_KEYWORDS)
 
       if (isCharacterGuessQuestion && guessName) {
         // Make the guess FIRST, then generate portrait in background
@@ -214,9 +228,13 @@ export function useGameLoop() {
       if (!ENABLE_IMAGE_GENERATION) {
         console.info('[GameLoop] Hero image generation disabled')
         dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: '' })
+      } else if (s.currentImageUrl) {
+        // Image was already generated during the guess phase — reuse it immediately
+        console.info('[GameLoop] Reusing existing guess-phase image for hero render')
+        dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: s.currentImageUrl })
       } else if (!s.finalGuess) {
         console.warn('[GameLoop] No final guess - skipping hero image')
-        dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: s.currentImageUrl || '' })
+        dispatch({ type: 'HERO_RENDER_COMPLETE', imageUrl: '' })
       } else {
         try {
           console.info('[GameLoop] ==========================================')
@@ -271,8 +289,13 @@ export function useGameLoop() {
         : s.rejectedGuesses
       try {
         const turnHistory = s.turns.map(t => ({ question: t.question, answer: t.answer }))
+        // Pass the rejected guess as previousQuestion so askDetective:
+        // 1. Adds it to completeTurnHistory (avoids re-processing the prior Q6 turn)
+        // 2. Lets rejectedAttempts tracking find the rejection → enoughTurnsSinceRejection=false
+        const rejectedGuessQuestion = s.finalGuess ? `Is your character ${s.finalGuess}?` : undefined
         const { question, newTraits, topGuesses } = await askDetective(
           s.traits, turnHistory, s.turn + 1, rejected,
+          rejectedGuessQuestion, 'no'
         )
         
         // CRITICAL: Check if the new question is also a guess!
@@ -280,17 +303,12 @@ export function useGameLoop() {
         // HOWEVER: DO NOT allow back-to-back guesses! AI needs discriminating questions first.
         const guessMatch = question.match(/^Is your character (.+)\?$/i)
         const guessName = guessMatch?.[1]?.trim()
-        const traitKeywords = [
-          'american', 'british', 'male', 'female', 'fictional', 'real', 'an actor', 'an athlete',
-          'a musician', 'a politician', 'a superhero', 'a villain', 'from a', 'from an', 'from the',
-          'known for', 'alive', 'dead', 'still alive', 'well-known', 'famous',
-        ]
-        const isCharacterGuessQuestion = guessName && !traitKeywords.some(kw => guessName.toLowerCase().includes(kw))
+        const isCharacterGuessQuestion = guessName && !containsTraitKeyword(guessName, TRAIT_KEYWORDS)
 
         // Check if previous turn was also a guess - prevent back-to-back guessing
         const lastTurn = s.turns.length > 0 ? s.turns[s.turns.length - 1] : null
-        const lastQuestionWasGuess = lastTurn && /^Is your character [A-Z]/.test(lastTurn.question) && 
-          !traitKeywords.some(kw => lastTurn.question.toLowerCase().includes(kw))
+        const lastQuestionWasGuess = lastTurn && /^Is your character [A-Z]/.test(lastTurn.question) &&
+          !containsTraitKeyword(lastTurn.question, TRAIT_KEYWORDS)
 
         if (isCharacterGuessQuestion && guessName && !lastQuestionWasGuess) {
           console.log(`[UI] 🎯 Turn ${s.turn + 1}: GUESS AFTER REJECTION - "${question}" → Guessing: ${guessName}`)

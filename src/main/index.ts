@@ -6,8 +6,8 @@ let mainWindow: BrowserWindow | null = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1280,
+    height: 1024,
     minWidth: 900,
     minHeight: 600,
     webPreferences: {
@@ -24,7 +24,6 @@ function createWindow() {
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
-    // Open DevTools in development mode
     mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'))
@@ -33,27 +32,27 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
-  
-  // Register DevTools shortcut (Ctrl+Shift+I or Cmd+Option+I on Mac)
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.control && input.shift && input.key.toLowerCase() === 'i') {
-      if (mainWindow?.webContents.isDevToolsOpened()) {
-        mainWindow.webContents.closeDevTools()
-      } else {
-        mainWindow?.webContents.openDevTools()
-      }
-      event.preventDefault()
-    }
-    // Also support F12
-    if (input.key === 'F12') {
-      if (mainWindow?.webContents.isDevToolsOpened()) {
-        mainWindow.webContents.closeDevTools()
-      } else {
-        mainWindow?.webContents.openDevTools()
-      }
-      event.preventDefault()
+
+  // Forward renderer console messages to the terminal so tool-call debug output is visible
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    const src = sourceId ? `${sourceId.split('/').pop()}:${line}` : ''
+    const prefix = src ? `[renderer ${src}]` : '[renderer]'
+    switch (level) {
+      case 0: console.debug(prefix, message); break   // verbose
+      case 1: console.log(prefix, message);   break   // info
+      case 2: console.warn(prefix, message);  break   // warning
+      case 3: console.error(prefix, message); break   // error
+      default: console.log(prefix, message)
     }
   })
+}
+
+function toggleDevTools() {
+  if (mainWindow?.webContents.isDevToolsOpened()) {
+    mainWindow.webContents.closeDevTools()
+  } else {
+    mainWindow?.webContents.openDevTools()
+  }
 }
 
 // Window control IPC handlers
@@ -85,7 +84,17 @@ ipcMain.handle('load-character-knowledge', async () => {
   }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow()
+
+  // globalShortcut works reliably with frameless windows; before-input-event does not
+  globalShortcut.register('CommandOrControl+Shift+I', toggleDevTools)
+  globalShortcut.register('F12', toggleDevTools)
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

@@ -1,6 +1,23 @@
+export interface ChatToolCall {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+export interface ChatTool {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: Record<string, unknown>
+  }
+}
+
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant'
-  content: string
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | null  // null when assistant message contains only tool_calls
+  tool_calls?: ChatToolCall[]
+  tool_call_id?: string    // required when role === 'tool'
 }
 
 export interface ChatCompletionRequest {
@@ -8,13 +25,16 @@ export interface ChatCompletionRequest {
   messages: ChatMessage[]
   temperature?: number
   max_tokens?: number
+  tools?: ChatTool[]
+  tool_choice?: 'auto' | 'none'
 }
 
 export interface ChatCompletionResponse {
   choices: Array<{
     message: {
       role: string
-      content: string
+      content: string | null
+      tool_calls?: ChatToolCall[]
     }
     finish_reason: string
   }>

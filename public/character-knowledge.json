@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "character_count": 529,
-  "last_updated": "2026-02-19T04:03:37.394698",
+  "character_count": 506,
+  "last_updated": "2026-02-19T04:18:02.387529",
   "characters": {
     "abraham lincoln": {
       "name": "Abraham Lincoln",
@@ -358,24 +358,6 @@
       "source_url": "https://en.wikipedia.org/wiki/Alexander_the_Great",
       "last_updated": "2026-02-19T03:16:12.807006",
       "confidence": 0.8
-    },
-    "list of my hero academia characters": {
-      "name": "List of My Hero Academia characters",
-      "category": "anime",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "The My Hero Academia manga and anime series features various characters created by Kōhei Horikoshi. The series takes place in a fictional world where "
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/List_of_My_Hero_Academia_characters",
-      "last_updated": "2026-02-15T17:57:34.836968",
-      "confidence": 0.6
     },
     "angela merkel": {
       "name": "Angela Merkel",
@@ -963,24 +945,6 @@
       "source_url": "https://en.wikipedia.org/wiki/Bill_Clinton",
       "last_updated": "2026-02-19T03:17:09.820196",
       "confidence": 0.8
-    },
-    "black panther (disambiguation)": {
-      "name": "Black panther (disambiguation)",
-      "category": "other",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "Topics referred to by the same term"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Black_panther_(disambiguation)",
-      "last_updated": "2026-02-15T17:07:18.920535",
-      "confidence": 0.6
     },
     "black widow": {
       "name": "Black widow",
@@ -7835,109 +7799,6 @@
       "source": "wikidata+wikipedia",
       "source_url": "https://en.wikipedia.org/wiki/Thanos",
       "last_updated": "2026-02-19T03:29:22.177651",
-      "confidence": 0.8
-    },
-    "the beatles": {
-      "name": "The Beatles",
-      "category": "musicians",
-      "signature_works": [
-        {
-          "name": "Paperback Writer",
-          "type": "album",
-          "year": 1966,
-          "confidence_boost": 0.92,
-          "question": null
-        },
-        {
-          "name": "Ob-La-Di, Ob-La-Da",
-          "type": "album",
-          "year": 1968,
-          "confidence_boost": 0.9,
-          "question": null
-        },
-        {
-          "name": "Come Together",
-          "type": "album",
-          "year": 1969,
-          "confidence_boost": 0.88,
-          "question": null
-        },
-        {
-          "name": "Get Back",
-          "type": "album",
-          "year": 1969,
-          "confidence_boost": 0.86,
-          "question": null
-        },
-        {
-          "name": "Let It Be",
-          "type": "album",
-          "year": 1970,
-          "confidence_boost": 0.84,
-          "question": null
-        },
-        {
-          "name": "Revolver",
-          "type": "album",
-          "year": 1966,
-          "confidence_boost": 0.82,
-          "question": null
-        },
-        {
-          "name": "Abbey Road",
-          "type": "album",
-          "year": 1969,
-          "confidence_boost": 0.8,
-          "question": null
-        },
-        {
-          "name": "Here Comes the Sun",
-          "type": "album",
-          "year": null,
-          "confidence_boost": 0.8,
-          "question": null
-        },
-        {
-          "name": "Strawberry Fields Forever",
-          "type": "album",
-          "year": 1967,
-          "confidence_boost": 0.8,
-          "question": null
-        },
-        {
-          "name": "Yesterday",
-          "type": "album",
-          "year": 1965,
-          "confidence_boost": 0.8,
-          "question": null
-        }
-      ],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "beat music",
-          "blues rock",
-          "experimental rock",
-          "folk rock",
-          "hard rock",
-          "rock and roll",
-          "rock music"
-        ]
-      },
-      "distinctive_facts": [
-        "English rock band (1960–1970)",
-        "Award: Grammy Award for Album of the Year",
-        "Award: Grammy Award for Best Music Video",
-        "Award: Grammy Award for Best New Artist",
-        "Award: Grammy Award for Best Pop Vocal Album",
-        "Award: Grammy Lifetime Achievement Award"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/The_Beatles",
-      "last_updated": "2026-02-19T03:29:27.471343",
       "confidence": 0.8
     },
     "the flash": {
@@ -18973,24 +18834,6 @@
       "last_updated": "2026-02-19T03:47:33.596551",
       "confidence": 0.8
     },
-    "wasp (disambiguation)": {
-      "name": "Wasp (disambiguation)",
-      "category": "superheroes",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "Topics referred to by the same term"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Wasp_(disambiguation)",
-      "last_updated": "2026-02-15T18:38:05.414925",
-      "confidence": 0.6
-    },
     "theresa may": {
       "name": "Theresa May",
       "category": "politicians",
@@ -23829,24 +23672,6 @@
       "last_updated": "2026-02-19T03:55:03.992245",
       "confidence": 0.8
     },
-    "wasp": {
-      "name": "Wasp",
-      "category": "superheroes",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "Group of insects"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Wasp",
-      "last_updated": "2026-02-15T19:34:05.216780",
-      "confidence": 0.6
-    },
     "alphonse elric": {
       "name": "Alphonse Elric",
       "category": "anime",
@@ -23947,30 +23772,6 @@
       "source_url": "https://en.wikipedia.org/wiki/Ban",
       "last_updated": "2026-02-15T19:34:36.378303",
       "confidence": 0.6
-    },
-    "coldplay": {
-      "name": "Coldplay",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "alternative rock",
-          "pop music"
-        ]
-      },
-      "distinctive_facts": [
-        "British rock band",
-        "Award: NRJ Music Award for International Group/Duo/Troupe of the Year",
-        "Award: Q3334517"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Coldplay",
-      "last_updated": "2026-02-19T03:55:28.196237",
-      "confidence": 0.8
     },
     "daniel craig": {
       "name": "Daniel Craig",
@@ -24080,86 +23881,6 @@
       "source_url": "https://en.wikipedia.org/wiki/Denji",
       "last_updated": "2026-02-15T19:34:52.915333",
       "confidence": 0.6
-    },
-    "foo fighters": {
-      "name": "Foo Fighters",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "alternative rock",
-          "hard rock",
-          "post-grunge"
-        ]
-      },
-      "distinctive_facts": [
-        "American rock band",
-        "Award: American Music Award for Favorite Alternative Rock Artist",
-        "Award: MTV Video Music Award for Best Rock Video",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Foo_Fighters",
-      "last_updated": "2026-02-19T03:55:41.401238",
-      "confidence": 0.8
-    },
-    "green day": {
-      "name": "Green Day",
-      "category": "musicians",
-      "signature_works": [
-        {
-          "name": "Dookie",
-          "type": "album",
-          "year": 1994,
-          "confidence_boost": 0.92,
-          "question": null
-        },
-        {
-          "name": "American Idiot",
-          "type": "album",
-          "year": 2004,
-          "confidence_boost": 0.9,
-          "question": null
-        },
-        {
-          "name": "1,039/Smoothed Out Slappy Hours",
-          "type": "album",
-          "year": 1990,
-          "confidence_boost": 0.88,
-          "question": null
-        },
-        {
-          "name": "Saviors",
-          "type": "album",
-          "year": 2024,
-          "confidence_boost": 0.86,
-          "question": null
-        }
-      ],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "alternative rock",
-          "pop-punk",
-          "punk rock",
-          "rock music"
-        ]
-      },
-      "distinctive_facts": [
-        "American rock band",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Green_Day",
-      "last_updated": "2026-02-19T03:55:47.425609",
-      "confidence": 0.8
     },
     "helen mirren": {
       "name": "Helen Mirren",
@@ -24418,100 +24139,6 @@
       "last_updated": "2026-02-19T03:56:14.777959",
       "confidence": 0.8
     },
-    "led zeppelin": {
-      "name": "Led Zeppelin",
-      "category": "musicians",
-      "signature_works": [
-        {
-          "name": "Stairway to Heaven",
-          "type": "album",
-          "year": 1971,
-          "confidence_boost": 0.92,
-          "question": null
-        },
-        {
-          "name": "Led Zeppelin IV",
-          "type": "album",
-          "year": 1971,
-          "confidence_boost": 0.9,
-          "question": null
-        }
-      ],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "blues rock",
-          "classic rock",
-          "folk rock",
-          "hard rock",
-          "rock music"
-        ]
-      },
-      "distinctive_facts": [
-        "English rock band (1968–1980)",
-        "Award: Echo Pop Honorary Award",
-        "Award: Grammy Lifetime Achievement Award",
-        "Award: Kennedy Center Honors",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Led_Zeppelin",
-      "last_updated": "2026-02-19T03:56:21.385340",
-      "confidence": 0.8
-    },
-    "linkin park": {
-      "name": "Linkin Park",
-      "category": "musicians",
-      "signature_works": [
-        {
-          "name": "Hybrid Theory",
-          "type": "album",
-          "year": 2000,
-          "confidence_boost": 0.92,
-          "question": null
-        },
-        {
-          "name": "Meteora",
-          "type": "album",
-          "year": 2003,
-          "confidence_boost": 0.9,
-          "question": null
-        }
-      ],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "alternative metal",
-          "alternative rock",
-          "electronic rock",
-          "electropop",
-          "hip-hop",
-          "nu metal",
-          "pop music",
-          "pop rock",
-          "rap metal",
-          "rap rock"
-        ]
-      },
-      "distinctive_facts": [
-        "American rock band",
-        "Award: American Music Award for Favorite Alternative Rock Artist",
-        "Award: Grammy Award for Best Hard Rock Performance",
-        "Award: Grammy Award for Best Melodic Rap Performance",
-        "Award: MTV Europe Music Award for Best Group",
-        "Award: MTV Europe Music Award for Best Hard Rock"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Linkin_Park",
-      "last_updated": "2026-02-19T03:56:28.729967",
-      "confidence": 0.8
-    },
     "makima": {
       "name": "Makima",
       "category": "anime",
@@ -24760,34 +24387,6 @@
       "last_updated": "2026-02-19T03:56:56.272297",
       "confidence": 0.8
     },
-    "pink floyd": {
-      "name": "Pink Floyd",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "acid rock",
-          "blues rock",
-          "proto-prog",
-          "space rock"
-        ]
-      },
-      "distinctive_facts": [
-        "English rock band",
-        "Award: Grammy Award for Best Rock Instrumental Performance",
-        "Award: Grammy Hall of Fame",
-        "Award: Polar Music Prize",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Pink_Floyd",
-      "last_updated": "2026-02-19T03:57:01.733616",
-      "confidence": 0.8
-    },
     "power": {
       "name": "Power",
       "category": "anime",
@@ -24823,65 +24422,6 @@
       "source_url": "https://en.wikipedia.org/wiki/Queen",
       "last_updated": "2026-02-15T19:36:51.886303",
       "confidence": 0.6
-    },
-    "radiohead": {
-      "name": "Radiohead",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "Britpop",
-          "alternative rock",
-          "art pop",
-          "chamber pop",
-          "electronic rock",
-          "neo-prog"
-        ]
-      },
-      "distinctive_facts": [
-        "English rock band",
-        "Award: Grammy Award for Best Alternative Music Album",
-        "Award: Libera Award for Best Live Act",
-        "Award: Libera Award for Video of the Year",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Radiohead",
-      "last_updated": "2026-02-19T03:57:11.686162",
-      "confidence": 0.8
-    },
-    "red hot chili peppers": {
-      "name": "Red Hot Chili Peppers",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "funk metal",
-          "hard rock",
-          "heavy metal music",
-          "rock music"
-        ]
-      },
-      "distinctive_facts": [
-        "American rock band",
-        "Award: American Music Award for Favorite Alternative Rock Artist",
-        "Award: American Music Award for Favorite Pop/Rock Band/Duo/Group",
-        "Award: Grammy Award for Best Hard Rock Performance",
-        "Award: Grammy Award for Best Rock Album",
-        "Award: Grammy Award for Best Rock Performance by a Duo or Group with Vocal"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Red_Hot_Chili_Peppers",
-      "last_updated": "2026-02-19T03:57:17.134643",
-      "confidence": 0.8
     },
     "reese witherspoon": {
       "name": "Reese Witherspoon",
@@ -25265,24 +24805,6 @@
       "source_url": "https://en.wikipedia.org/wiki/Andy_Bernard",
       "last_updated": "2026-02-19T03:57:44.639013",
       "confidence": 0.8
-    },
-    "list of spy × family characters": {
-      "name": "List of Spy × Family characters",
-      "category": "anime",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "Spy × Family, a manga series written and illustrated by Tatsuya Endo and later adapted to an anime with the same name, features a cast of characters w"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/List_of_Spy_%C3%97_Family_characters",
-      "last_updated": "2026-02-15T19:42:06.932660",
-      "confidence": 0.6
     },
     "billie eilish": {
       "name": "Billie Eilish",
@@ -26344,24 +25866,6 @@
       "last_updated": "2026-02-15T19:41:13.442537",
       "confidence": 0.6
     },
-    "list of the office (american tv series) characters": {
-      "name": "List of The Office (American TV series) characters",
-      "category": "tv-characters",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "The Office is an American television series based on the British television comedy of the same name. The format of the series is a parody of the fly o"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/List_of_The_Office_(American_TV_series)_characters",
-      "last_updated": "2026-02-15T19:41:18.952059",
-      "confidence": 0.6
-    },
     "steve buscemi": {
       "name": "Steve Buscemi",
       "category": "actors",
@@ -26511,45 +26015,6 @@
       "source": "wikidata+wikipedia",
       "source_url": "https://en.wikipedia.org/wiki/Supergirl",
       "last_updated": "2026-02-19T03:59:40.711358",
-      "confidence": 0.8
-    },
-    "list of one-punch man characters": {
-      "name": "List of One-Punch Man characters",
-      "category": "anime",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "\nThe Japanese manga series One-Punch Man contains a number of fictional characters created by One and illustrated by Yusuke Murata. The series follows"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/List_of_One-Punch_Man_characters",
-      "last_updated": "2026-02-15T19:41:43.497000",
-      "confidence": 0.6
-    },
-    "the chainsmokers": {
-      "name": "The Chainsmokers",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "electronic dance music"
-        ]
-      },
-      "distinctive_facts": [
-        "American music producer duo"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/The_Chainsmokers",
-      "last_updated": "2026-02-19T03:59:51.383361",
       "confidence": 0.8
     },
     "travis scott": {
@@ -26702,30 +26167,6 @@
       "last_updated": "2026-02-19T04:00:02.374785",
       "confidence": 0.8
     },
-    "ac/dc": {
-      "name": "AC/DC",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "blues rock",
-          "hard rock",
-          "rock and roll"
-        ]
-      },
-      "distinctive_facts": [
-        "Australian rock band",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/AC%2FDC",
-      "last_updated": "2026-02-19T04:00:07.877951",
-      "confidence": 0.8
-    },
     "anya taylor-joy": {
       "name": "Anya Taylor-Joy",
       "category": "actors",
@@ -26874,56 +26315,6 @@
       "source": "wikidata+wikipedia",
       "source_url": "https://en.wikipedia.org/wiki/Apu_Nahasapeemapetilon",
       "last_updated": "2026-02-19T04:00:18.917782",
-      "confidence": 0.8
-    },
-    "bts": {
-      "name": "BTS",
-      "category": "musicians",
-      "signature_works": [
-        {
-          "name": "Dynamite",
-          "type": "album",
-          "year": 2020,
-          "confidence_boost": 0.92,
-          "question": null
-        },
-        {
-          "name": "Idol",
-          "type": "album",
-          "year": 2018,
-          "confidence_boost": 0.9,
-          "question": null
-        },
-        {
-          "name": "Butter",
-          "type": "album",
-          "year": 2021,
-          "confidence_boost": 0.88,
-          "question": null
-        }
-      ],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "K-pop",
-          "Korean hip-hop",
-          "dance-pop"
-        ]
-      },
-      "distinctive_facts": [
-        "South Korean boy band",
-        "Award: American Music Award for Artist of the Year",
-        "Award: American Music Award for Favorite Pop/Rock Band/Duo/Group",
-        "Award: American Music Award for Tour of the Year",
-        "Award: Billboard Music Award for Top Duo/Group",
-        "Award: Billboard Music Award for Top Social Artist"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/BTS",
-      "last_updated": "2026-02-19T04:00:24.381805",
       "confidence": 0.8
     },
     "blade": {
@@ -27227,31 +26618,6 @@
       "last_updated": "2026-02-19T04:01:05.665409",
       "confidence": 0.8
     },
-    "guns n' roses": {
-      "name": "Guns N' Roses",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "hard rock"
-        ]
-      },
-      "distinctive_facts": [
-        "American rock band",
-        "Award: American Music Awards",
-        "Award: MTV Video Music Awards",
-        "Award: Rock and Roll Hall of Fame",
-        "Award: World Music Awards"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Guns_N'_Roses",
-      "last_updated": "2026-02-19T04:01:10.193815",
-      "confidence": 0.8
-    },
     "gut": {
       "name": "Gut",
       "category": "anime",
@@ -27460,24 +26826,6 @@
       "last_updated": "2026-02-19T04:01:35.187766",
       "confidence": 0.8
     },
-    "list of inuyasha characters": {
-      "name": "List of Inuyasha characters",
-      "category": "anime",
-      "signature_works": [],
-      "traits": {
-        "fictional": false
-      },
-      "distinctive_facts": [
-        "The characters of the Inuyasha manga series were created by Rumiko Takahashi. Most of the series takes place in a fictional version of Japan's Warring"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/List_of_Inuyasha_characters",
-      "last_updated": "2026-02-15T19:44:36.360992",
-      "confidence": 0.6
-    },
     "himura kenshin": {
       "name": "Himura Kenshin",
       "category": "anime",
@@ -27671,30 +27019,6 @@
       "source": "wikidata+wikipedia",
       "source_url": "https://en.wikipedia.org/wiki/Max_Verstappen",
       "last_updated": "2026-02-19T04:02:35.486028",
-      "confidence": 0.8
-    },
-    "metallica": {
-      "name": "Metallica",
-      "category": "musicians",
-      "signature_works": [],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "heavy metal music",
-          "thrash metal"
-        ]
-      },
-      "distinctive_facts": [
-        "American heavy metal band",
-        "Award: Grammy Award for Best Metal Performance",
-        "Award: Rock and Roll Hall of Fame"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/Metallica",
-      "last_updated": "2026-02-19T04:02:42.675019",
       "confidence": 0.8
     },
     "moon knight": {
@@ -28080,44 +27404,6 @@
       "source": "wikidata+wikipedia",
       "source_url": "https://en.wikipedia.org/wiki/Timoth%C3%A9e_Chalamet",
       "last_updated": "2026-02-19T04:03:26.397470",
-      "confidence": 0.8
-    },
-    "u2": {
-      "name": "U2",
-      "category": "musicians",
-      "signature_works": [
-        {
-          "name": "New Year's Day",
-          "type": "album",
-          "year": 1983,
-          "confidence_boost": 0.92,
-          "question": null
-        }
-      ],
-      "traits": {
-        "fictional": false,
-        "genre": [
-          "alternative rock",
-          "dance-rock",
-          "pop rock",
-          "post-punk",
-          "punk rock"
-        ]
-      },
-      "distinctive_facts": [
-        "Irish rock band",
-        "Award: Ambassador of Conscience Award",
-        "Award: American Music Award for Artist of the Year",
-        "Award: BRIT Awards",
-        "Award: CASBY Award",
-        "Award: Grammy Awards"
-      ],
-      "aliases": null,
-      "appearance": null,
-      "relationships": null,
-      "source": "wikidata+wikipedia",
-      "source_url": "https://en.wikipedia.org/wiki/U2",
-      "last_updated": "2026-02-19T04:03:32.074868",
       "confidence": 0.8
     },
     "vash the stampede": {

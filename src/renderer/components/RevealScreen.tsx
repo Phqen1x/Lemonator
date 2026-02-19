@@ -14,9 +14,15 @@ export default function RevealScreen({ onConfirm, onReset }: Props) {
         <div className="reveal-content">
           <h2>My guess is...</h2>
           <h1 className="reveal-guess">{finalGuess}</h1>
-          {currentImageUrl && (
-            <img src={currentImageUrl} alt="Character" className="reveal-image" />
-          )}
+          <div className="reveal-image-slot">
+            {currentImageUrl ? (
+              <img src={currentImageUrl} alt="Character" className="reveal-image reveal-image-loaded" />
+            ) : (
+              <div className="reveal-image-placeholder">
+                <span className="reveal-image-placeholder-text">Generating image…</span>
+              </div>
+            )}
+          </div>
           <p>Am I right?</p>
           <div className="reveal-buttons">
             <button className="answer-btn btn-yes" onClick={() => onConfirm(true)}>

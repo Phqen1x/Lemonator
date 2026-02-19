@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { chatCompletion } from './lemonade'
 import { DETECTIVE_MODEL, CONFIDENCE_THRESHOLD, ENABLE_WIKIPEDIA_SEARCH } from '../../shared/constants'
 import type { Trait, Guess, AnswerValue } from '../types/game'
+import type { CharacterData } from './character-rag'
 import {
   loadCharacterKnowledge,
   filterCharactersByTraits,
@@ -127,6 +128,282 @@ function parseTraits(llmResponse: string): Omit<Trait, 'turnAdded'>[] {
   }
 }
 
+// ===== QUESTION TOPIC TRACKING — semantic duplicate detection =====
+// Maps topic keys to keyword lists. Questions sharing a topic are considered semantically equivalent.
+const QUESTION_TOPICS: Record<string, string[]> = {
+  'setting/workplace':   ['office', 'corporate', 'workplace', 'cubicle', 'desk', 'works in', 'business setting', 'professional setting'],
+  'trait/fictional':     ['fictional', 'real person', 'made up', 'made-up', 'imaginary'],
+  'trait/gender':        ['male', 'female', 'man', 'woman', 'boy', 'girl', 'his gender', 'her gender'],
+  'trait/powers':        ['superpower', 'super power', 'powers', 'abilities', 'magic', 'supernatural', 'fly ', 'teleport'],
+  'trait/alignment':     ['villain', 'hero', 'protagonist', 'antagonist', 'evil', 'bad guy'],
+  'trait/age_era':       ['still alive', 'alive today', 'born before', 'active in the', 'died before', 'historical figure', '20th century', '21st century'],
+  'trait/nationality':   ['american', 'british', 'english', 'japanese', 'french', 'german', 'european', 'united kingdom', 'from the uk', 'from england', 'from britain', 'from japan', 'from france', 'nationality', 'from which country'],
+  'trait/species':       ['human', 'alien', 'robot', 'animal', 'creature'],
+  'trait/intelligence':  ['intelligent', 'genius', 'smart', 'wisdom', 'clever'],
+  'trait/humor':         ['comedy', 'comedic', 'funny', 'humor', 'known for comedy', 'comedy movies', 'comedy shows', 'comedy films'],
+  'trait/drama':         ['dramatic role', 'serious role', 'known for drama', 'drama films', 'dramatic films', 'serious movies', 'dramatic movie', 'known for serious', 'known for dramatic', 'serious roles', 'dramatic roles'],
+  'trait/team':          ['work with a team', 'works alone', 'part of a group', 'duo', 'sidekick'],
+  'category/actor':      ['is your character an actor', 'is your character an actress', 'is your character in acting'],
+  'category/musician':   ['musician', 'singer', 'band', 'music', 'song', 'album', 'rapper', 'hip-hop'],
+  'category/athlete':    ['athlete', 'sport', 'plays sports', 'championship'],
+  'category/politician': ['politician', 'president', 'senator', 'politics', 'elected', 'govern'],
+  'category/superhero':  ['superhero', 'super hero', 'marvel', 'dc comics', 'avengers'],
+  'category/anime':      ['anime', 'manga', 'japanese animation', 'originate in an anime', 'originate in a manga'],
+  'category/videogame':  ['video game', 'videogame', 'game character', 'originate in a video game'],
+  'media/tv':            ['tv show', 'television', 'sitcom', 'drama series', 'originate in a tv', 'originate in a sitcom', 'originate in a drama'],
+  'media/movie':         ['movie franchise', 'film franchise', 'blockbuster'],
+  'media/animation':     ['animated show', 'animated series', 'cartoon'],
+  'media/comic':         ['comic book', 'graphic novel'],
+  'achievement/award':   ['award', 'oscar', 'emmy', 'grammy', 'golden globe', 'nominated'],
+  'appearance/clothing': ['costume', 'uniform', 'outfit', 'mask'],
+  'appearance/physical': ['hair', 'physical appearance', 'distinctive feature'],
+}
+
+function extractTopicsFromQuestion(question: string): string[] {
+  const lower = question.toLowerCase()
+  const topics: string[] = []
+  for (const [topic, keywords] of Object.entries(QUESTION_TOPICS)) {
+    if (keywords.some(kw => lower.includes(kw))) {
+      topics.push(topic)
+    }
+  }
+  return topics
+}
+
+function isTopicAlreadyCovered(
+  newQuestion: string,
+  previousTurns: Array<{ question: string; answer: AnswerValue }>
+): { covered: boolean; matchedTopic: string | null; matchedQuestion: string | null } {
+  const newTopics = extractTopicsFromQuestion(newQuestion)
+  if (newTopics.length === 0) return { covered: false, matchedTopic: null, matchedQuestion: null }
+
+  for (const turn of previousTurns) {
+    const prevTopics = extractTopicsFromQuestion(turn.question)
+    const overlap = newTopics.filter(t => prevTopics.includes(t))
+    if (overlap.length > 0) {
+      return { covered: true, matchedTopic: overlap[0], matchedQuestion: turn.question }
+    }
+  }
+  return { covered: false, matchedTopic: null, matchedQuestion: null }
+}
+
+// ===== TOOL DEFINITION — lets the LLM query asked-question history =====
+
+const GET_ASKED_QUESTIONS_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_asked_questions',
+    description:
+      'Returns the history of every question asked so far, the user\'s answers, and which semantic topics each question covered. ' +
+      'Call this BEFORE generating your question to avoid asking about topics already covered.',
+    parameters: {
+      type: 'object' as const,
+      properties: {} as Record<string, unknown>,
+      required: [] as string[],
+    },
+  },
+}
+
+const GET_REMAINING_CANDIDATES_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_remaining_candidates',
+    description:
+      'Returns how many candidate characters are still in contention, their names, and a ' +
+      '"discriminating_traits" map showing how each trait splits the pool ' +
+      '(e.g., {"nationality": {"american": 10, "british": 2}}). ' +
+      'Call this to see who is still possible and which trait would best divide them.',
+    parameters: {
+      type: 'object' as const,
+      properties: {} as Record<string, unknown>,
+      required: [] as string[],
+    },
+  },
+}
+
+const GET_BEST_QUESTION_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_best_question',
+    description:
+      'Returns the statistically optimal yes/no question computed by Shannon-entropy analysis ' +
+      'of the remaining candidates. You may adopt this question or override it with your own. ' +
+      'Returns null if no optimal question could be determined.',
+    parameters: {
+      type: 'object' as const,
+      properties: {} as Record<string, unknown>,
+      required: [] as string[],
+    },
+  },
+}
+
+const LOOKUP_CHARACTER_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'lookup_character',
+    description:
+      'Looks up a specific character by name in the knowledge base. ' +
+      'Returns whether the character exists, their full trait set, and a compatibility score (0–1) ' +
+      'against the confirmed traits so far. Use this to sanity-check a potential guess.',
+    parameters: {
+      type: 'object' as const,
+      properties: {
+        name: {
+          type: 'string',
+          description: 'The full character name to look up (case-insensitive)',
+        },
+      },
+      required: ['name'] as string[],
+    },
+  },
+}
+
+function buildQuestionHistoryToolResponse(
+  turns: Array<{ question: string; answer: AnswerValue }>
+): string {
+  if (turns.length === 0) {
+    return JSON.stringify({
+      questions_asked: 0,
+      covered_topics: [],
+      available_topics: Object.keys(QUESTION_TOPICS).slice(0, 10),
+      suggestion: 'No questions asked yet. Start with broad categories: fictional status, gender, category (actor/athlete/musician/etc.)',
+    })
+  }
+
+  const coveredTopicSet = new Set<string>()
+  const history = turns.map((t, i) => {
+    const topics = extractTopicsFromQuestion(t.question)
+    topics.forEach(tp => coveredTopicSet.add(tp))
+    return { number: i + 1, question: t.question, answer: t.answer, topics }
+  })
+
+  const coveredTopics = Array.from(coveredTopicSet)
+  const avoidance = coveredTopics.map(topic => {
+    const keywords = QUESTION_TOPICS[topic] || []
+    return `"${topic}" — avoid words like: ${keywords.slice(0, 4).join(', ')}`
+  })
+  const uncoveredTopics = Object.keys(QUESTION_TOPICS).filter(t => !coveredTopicSet.has(t))
+
+  return JSON.stringify({
+    questions_asked: turns.length,
+    history,
+    covered_topics: coveredTopics,
+    do_not_ask_about: avoidance,
+    available_topics: uncoveredTopics.slice(0, 12),
+    instruction: 'Your next question MUST be about one of the available_topics, NOT the covered_topics.',
+  }, null, 2)
+}
+
+function buildRemainingCandidatesToolResponse(
+  remainingCandidates: CharacterData[]
+): string {
+  if (remainingCandidates.length === 0) {
+    return JSON.stringify({ count: 0, names: [], discriminating_traits: {} })
+  }
+
+  // Tally each trait value across all remaining candidates
+  const tally: Record<string, Record<string, number>> = {}
+
+  for (const char of remainingCandidates) {
+    // Top-level category field
+    if (char.category) {
+      tally['category'] = tally['category'] || {}
+      tally['category'][char.category] = (tally['category'][char.category] || 0) + 1
+    }
+    // All fields inside .traits — guard against null/undefined traits
+    if (char.traits) {
+      for (const [key, val] of Object.entries(char.traits)) {
+        if (val === null || val === undefined) continue
+        const strVal = String(val)
+        tally[key] = tally[key] || {}
+        tally[key][strVal] = (tally[key][strVal] || 0) + 1
+      }
+    }
+  }
+
+  // Only include traits that actually vary (more than one distinct value)
+  // For large pools, also cap to at most 8 most-balanced discriminating traits
+  const discriminating: Record<string, Record<string, number>> = {}
+  const n = remainingCandidates.length
+  const traitEntries = Object.entries(tally).filter(([, values]) => Object.keys(values).length > 1)
+  // Sort by how evenly the trait splits the pool (closest to 50/50 = most useful)
+  traitEntries.sort(([, aVals], [, bVals]) => {
+    const aMax = Math.max(...Object.values(aVals))
+    const bMax = Math.max(...Object.values(bVals))
+    // Lower max = more balanced split = better discriminator
+    return aMax - bMax
+  })
+  for (const [key, values] of traitEntries.slice(0, 8)) {
+    discriminating[key] = values
+  }
+
+  // For large pools (>50), omit names to keep the token footprint small
+  const names = n <= 50
+    ? remainingCandidates.slice(0, 30).map(c => c.name)
+    : []
+  const note = n > 50
+    ? `Too many candidates to enumerate (${n}). Use discriminating_traits to pick the next question.`
+    : undefined
+
+  return JSON.stringify({
+    count: n,
+    ...(note ? { note } : {}),
+    names,
+    discriminating_traits: discriminating,
+  }, null, 2)
+}
+
+function buildBestQuestionToolResponse(
+  strategicQuestion: string | null,
+  remainingCandidates: CharacterData[],
+  turns: Array<{ question: string; answer: AnswerValue }>
+): string {
+  if (!strategicQuestion) {
+    return JSON.stringify({
+      question: null,
+      reason: 'No optimal question found — candidates may be too few or all entropy questions already asked.',
+      candidates_remaining: remainingCandidates.length,
+    })
+  }
+  const approxSplit = Math.round(remainingCandidates.length / 2)
+  return JSON.stringify({
+    question: strategicQuestion,
+    reason:
+      `Shannon-entropy optimal for ${remainingCandidates.length} remaining candidates. ` +
+      `Expected to split approximately ${approxSplit} yes / ${remainingCandidates.length - approxSplit} no.`,
+    candidates_remaining: remainingCandidates.length,
+    turns_asked: turns.length,
+  })
+}
+
+function buildLookupCharacterToolResponse(
+  name: string,
+  traits: Trait[]
+): string {
+  if (!name.trim()) {
+    return JSON.stringify({ error: 'name parameter is required' })
+  }
+  const char = getCharacterByName(name)
+  if (!char) {
+    return JSON.stringify({
+      found: false,
+      name,
+      message: `"${name}" is not in the character knowledge base.`,
+    })
+  }
+  const score = scoreCharacterMatch(char, traits)
+  return JSON.stringify({
+    found: true,
+    name: char.name,
+    category: char.category,
+    traits: char.traits,
+    distinctive_facts: char.distinctive_facts.slice(0, 5),
+    compatibility_score: Math.round(score * 100) / 100,
+    compatibility_label:
+      score >= 0.8 ? 'strong match' : score >= 0.5 ? 'partial match' : 'weak match',
+  }, null, 2)
+}
+
 /**
  * System prompt for RAG-enhanced detective
  */
@@ -139,9 +416,9 @@ const RAG_DETECTIVE_SYSTEM_PROMPT = `You are an expert detective in a character-
 4. When you have 3-5 candidates left, ask SPECIFIC differentiating questions about TRAITS, not character names
 5. Make a guess when confidence ≥ 0.95 OR remaining candidates ≤ 2
 6. **DO NOT ask about:** Specific dates, specific physical features (too specific, can't be tracked)
-7. **DO NOT ask about awards** (Oscar, Emmy, Grammy, Golden Globe, etc.) until very late in the game. Most players don't know specific awards. Instead ask about movie genres, franchises, types of roles, or eras.
-8. **For ACTORS:** Prefer asking about movies, franchises, genres (comedy/drama/action/sci-fi), and eras over awards. Examples: "Has your character starred in a famous movie franchise?", "Is your character known for comedy?", "Has your character appeared in a war movie?"
-9. **ONLY ask about:** Category, fictional status, gender, powers, alignment, era (broad), origin medium, team membership, nationality (broad - American/British/European only), movie genres, franchises
+7. **For awards:** "Has your character won an Oscar?" is a good question for actors (most players know Oscar winners). Avoid other awards (Emmy, Grammy, Golden Globe) — too obscure.
+8. **For ACTORS:** Ask about Oscar status, alive/dead, genres (comedy/drama/sci-fi), and nationality. Examples: "Has your character won an Oscar?", "Is your character still alive today?", "Is your character known for comedy?", "Is your character from the United Kingdom?"
+9. **ONLY ask about:** Category, fictional status, gender, powers, alignment, origin medium, team membership, nationality (broad - American/British/European only), movie genres, franchises, time period (e.g., "active before 2000?")
 10. **NEVER ask "Is your character [Character Name]?"** — naming a specific character is a GUESS, not a question. Only the game system makes guesses.
 11. **NEVER ask questions that contradict previous answers.** If user confirmed "sitcom", do NOT ask about "drama". If user confirmed "basketball", do NOT ask about "soccer".
 
@@ -199,8 +476,9 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 - alignment (hero, villain)
 - species (human, alien, robot, god, animal, etc.)
 - age_group (child, teenager, adult)
-- era (ancient, medieval, modern, contemporary)
 - nationality (american, british, japanese, etc.)
+- has_oscar (true/false) — Has the actor/real person won an Academy Award/Oscar
+- is_alive (true/false) — Is the real person currently alive (not deceased)
 
 **OUTPUT:** Return ONLY valid JSON:
 {"key": "trait_key", "value": "trait_value", "confidence": 0.95}
@@ -217,6 +495,8 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
    - "Is female?" + "no" → {"key": "gender", "value": "male", "confidence": 0.9}
    - "Is fictional?" + "no" → {"key": "fictional", "value": "false", "confidence": 0.95}
    - "Is real?" + "no" → {"key": "fictional", "value": "true", "confidence": 0.95}
+   - "Won an Oscar?" + "no" → {"key": "has_oscar", "value": "false", "confidence": 0.85}
+   - "Still alive?" + "no" → {"key": "is_alive", "value": "false", "confidence": 0.85}
 
 3. For "PROBABLY" answers: Extract with lower confidence (0.7-0.8)
    Example: "Is male?" + "probably" → {"key": "gender", "value": "male", "confidence": 0.75}
@@ -266,24 +546,37 @@ Q: "Is your character male?" A: "Yes" → [{"key": "gender", "value": "male", "c
 Q: "Is your character male?" A: "No" → [{"key": "gender", "value": "female", "confidence": 0.9}]
 Q: "Is your character male?" A: "Probably" → [{"key": "gender", "value": "male", "confidence": 0.75}]
 Q: "Is your character male?" A: "Probably not" → [{"key": "gender", "value": "female", "confidence": 0.70}]
-Q: "Is your character still alive today?" A: "Yes" → [] (no alive/dead trait available)
-Q: "Is your character still alive today?" A: "No" → [] (no alive/dead trait available)
+Q: "Is your character still alive today?" A: "Yes" → [{"key": "is_alive", "value": "true", "confidence": 0.85}]
+Q: "Is your character still alive today?" A: "No" → [{"key": "is_alive", "value": "false", "confidence": 0.85}]
 Q: "Is your character from the UK?" A: "Yes" → [{"key": "nationality", "value": "british", "confidence": 0.95}]
 Q: "Is your character Japanese?" A: "Yes" → [{"key": "nationality", "value": "japanese", "confidence": 0.95}]
-Q: "Was your character active before 2000?" A: "Yes" → [{"key": "era", "value": "modern", "confidence": 0.75}]
-Q: "Was your character active before 2000?" A: "No" → [{"key": "era", "value": "contemporary", "confidence": 0.75}]
+Q: "Was your character active before 2000?" A: "Yes" → [] (no era trait available — return empty)
+Q: "Was your character active before 2000?" A: "No" → [] (no era trait available — return empty)
+Q: "Was your character active in the 2000s or later?" A: "Yes" → [] (no era trait available — return empty)
+Q: "Was your character active in the 2000s or later?" A: "No" → [] (no era trait available — return empty)
 Q: "Does your character have superpowers?" A: "Yes" → [{"key": "has_powers", "value": "true", "confidence": 0.95}]
 Q: "Does your character have superpowers?" A: "Probably not" → [{"key": "has_powers", "value": "false", "confidence": 0.70}]
 Q: "Is your character known for football?" A: "No" → [] (sport trait not available)
+Q: "Has your character won an Oscar?" A: "Yes" → [{"key": "has_oscar", "value": "true", "confidence": 0.9}]
+Q: "Has your character won an Oscar?" A: "No" → [{"key": "has_oscar", "value": "false", "confidence": 0.85}]
+Q: "Has your character won an Academy Award?" A: "Yes" → [{"key": "has_oscar", "value": "true", "confidence": 0.9}]
+Q: "Is your character known for dramatic or serious roles?" A: "Yes" → [] (no genre trait available — return empty)
+Q: "Is your character known for dramatic or serious roles?" A: "No" → [] (no genre trait available — return empty)
+Q: "Is your character known for comedy movies or shows?" A: "Yes" → [] (no genre trait available — return empty)
+Q: "Is your character known for comedy movies or shows?" A: "No" → [] (no genre trait available — return empty)
+Q: "Has your character appeared in a crime or thriller movie?" A: "Yes" → [] (no genre trait available — return empty)
+Q: "Has your character starred in a war or historical movie?" A: "Yes" → [] (no genre trait available — return empty)
+Q: "Is your character primarily known for action movies?" A: "Yes" → [] (no genre trait available — return empty)
+Q: "Has your character appeared in a sci-fi or fantasy movie?" A: "Yes" → [] (no genre trait available — return empty)
 Q: "Does your character originate from a country other than the United States?" A: "Yes" → [{"key": "nationality", "value": "NOT_american", "confidence": 0.8}]
 Q: "Is your character American?" A: "No" → [{"key": "nationality", "value": "NOT_american", "confidence": 0.9}]
 Q: "Did your character originate in an anime or manga?" A: "Yes" → [{"key": "category", "value": "anime", "confidence": 0.95}]
-Q: "Is your character from an anime?" A: "Yes" → [{"key": "category", "value": "anime", "confidence": 0.95}]
-Q: "Is your character from a TV show?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.95}]
-Q: "Is your character from a sitcom?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.9}, {"key": "tv_show_type", "value": "sitcom", "confidence": 0.9}]
-Q: "Is your character from an animated show?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.9}, {"key": "tv_show_type", "value": "animated", "confidence": 0.9}]
-Q: "Is your character from a drama series?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.9}, {"key": "tv_show_type", "value": "drama", "confidence": 0.9}]
-Q: "Is your character from a video game?" A: "Yes" → [{"key": "category", "value": "video-games", "confidence": 0.95}]
+Q: "Did your character originate in an anime or manga?" A: "Yes" → [{"key": "category", "value": "anime", "confidence": 0.95}]
+Q: "Did your character originate in a TV show?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.95}]
+Q: "Did your character originate in a sitcom?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.9}, {"key": "tv_show_type", "value": "sitcom", "confidence": 0.9}]
+Q: "Did your character originate in an animated show?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.9}, {"key": "tv_show_type", "value": "animated", "confidence": 0.9}]
+Q: "Did your character originate in a drama series?" A: "Yes" → [{"key": "category", "value": "tv-characters", "confidence": 0.9}, {"key": "tv_show_type", "value": "drama", "confidence": 0.9}]
+Q: "Did your character originate in a video game?" A: "Yes" → [{"key": "category", "value": "video-games", "confidence": 0.95}]
 
 MULTI-TRAIT EXTRACTION: If the question or answer implies multiple traits, extract ALL of them:
 Q: "Is your character a Marvel superhero?" A: "Yes" → [{"key": "category", "value": "superheroes", "confidence": 0.95}, {"key": "publisher", "value": "marvel", "confidence": 0.9}]
@@ -524,7 +817,11 @@ function isCharacterNameQuestion(question: string): boolean {
   ]
 
   const capturedLower = captured.toLowerCase()
-  if (traitKeywords.some(kw => capturedLower.includes(kw))) {
+  // Use word-boundary matching to avoid false positives like "male" matching "Malek"
+  if (traitKeywords.some(kw => {
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp('\\b' + escaped + '\\b').test(capturedLower)
+  })) {
     return false // It's a trait question
   }
 
@@ -1064,17 +1361,17 @@ async function askNextQuestion(
   )
 
   if (strategicQuestion && remainingCandidates.length > 10) {
-    console.info('[Detective-RAG] Using strategic question from RAG:', strategicQuestion)
-    
-    // Check if this question was already asked
     const askedQuestions = turns.map(t => t.question.toLowerCase())
-    console.log(`[Detective-RAG] Checking if "${strategicQuestion}" is duplicate. Previously asked (${askedQuestions.length}):`, askedQuestions)
     const isDuplicate = askedQuestions.includes(strategicQuestion.toLowerCase())
+    const topicCheck = isTopicAlreadyCovered(strategicQuestion, turns)
+
+    console.info(`[Detective-RAG] [PATH: strategic] question="${strategicQuestion}" duplicate=${isDuplicate} topicOverlap=${topicCheck.covered ? topicCheck.matchedTopic : 'none'}`)
+
     if (isDuplicate) {
-      console.warn(`[Detective-RAG] Strategic question already asked: "${strategicQuestion}"`)
-      console.warn('[Detective-RAG] Falling through to LLM question generation')
+      console.warn('[Detective-RAG] Strategic question already asked — falling through to LLM')
+    } else if (topicCheck.covered) {
+      console.warn(`[Detective-RAG] Strategic question topic already covered (${topicCheck.matchedTopic}) — falling through to LLM`)
     } else {
-      console.log(`[Detective-RAG] Strategic question is new, returning it`)
       return {
         question: strategicQuestion,
         topGuesses: hybridGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
@@ -1303,31 +1600,174 @@ CRITICAL RULES:
 4. If stuck, try a DIFFERENT type of question (era, appearance, personality, origin)
 5. NEVER name a specific character in your question — "Is your character [Name]?" is a GUESS, not a question
 6. NEVER ask questions that contradict confirmed answers (e.g., don't ask "drama?" after "sitcom" was confirmed)
-7. DO NOT ask about specific awards (Oscar, Emmy, Grammy, Golden Globe). Most players don't know which awards someone won. Ask about movie genres, franchises, and types of roles instead.
+7. For actors: "Has your character won an Oscar?" is a GOOD question — most people know Oscar winners. Avoid other awards (Emmy, Grammy, Golden Globe). Also good: "Is your character still alive today?", "Is your character known for comedy?", "Is your character from the UK?"
 
 BAD: "Is your character Dennis the Menace?" (this is a guess, not a question!)
 BAD: "Is your character from a drama?" (after user confirmed sitcom)
-BAD: "Has your character won an Oscar?" (most players don't know specific awards!)
+BAD: "Has your character won a Grammy?" (too obscure)
 BAD: "Is your character part of a team that includes a member known for having a high level of agility?"
+GOOD: "Has your character won an Oscar?"
+GOOD: "Is your character still alive today?"
 GOOD: "Does your character work with a team?"
-GOOD: "Is your character known for intelligence?"
-GOOD: "Has your character starred in a famous movie franchise?"
 GOOD: "Is your character known for comedy?"
+GOOD: "Has your character starred in a famous movie franchise?"
 
 Return your response as JSON.`
 
+  // ===== LLM CALL WITH MULTI-TOOL SUPPORT =====
+  // The LLM may call any combination of tools to inform its question choice:
+  //   get_asked_questions      — see topic history, avoid repeats
+  //   get_remaining_candidates — see who's still in contention + discriminating traits
+  //   get_best_question        — get the Shannon-entropy-optimal question as a hint
+  //   lookup_character(name)   — verify a candidate against confirmed traits before guessing
+  //
+  // The loop runs until the model produces a direct JSON answer or a safety cap is reached.
+  // Falls back to a no-tools call if the local model doesn't support tool calling at all.
+
+  const ALL_TOOLS = [
+    GET_ASKED_QUESTIONS_TOOL,
+    GET_REMAINING_CANDIDATES_TOOL,
+    GET_BEST_QUESTION_TOOL,
+    LOOKUP_CHARACTER_TOOL,
+  ]
+  const KNOWN_TOOL_NAMES = new Set(ALL_TOOLS.map(t => t.function.name))
+  const MAX_TOOL_ROUNDS = 5
+
+  let raw = ''
+
   try {
+    const baseMessages = [
+      { role: 'system' as const, content: RAG_DETECTIVE_SYSTEM_PROMPT },
+      { role: 'user' as const, content: contextPrompt },
+    ]
+
+    console.info(`[Detective-RAG] [PATH: llm] candidates=${remainingCandidates.length} turn=${turns.length + 1} — sending tool-enabled request`)
+
+    let messages: typeof baseMessages = baseMessages
+
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const isLastRound = round === MAX_TOOL_ROUNDS - 1
+
+      const response = await chatCompletion({
+        model: DETECTIVE_MODEL,
+        messages,
+        temperature: 0.3,
+        max_tokens: round === 0 ? 300 : 150,
+        // On the last round, omit tools to force a direct answer
+        tools: isLastRound ? undefined : ALL_TOOLS,
+        tool_choice: isLastRound ? undefined : 'auto',
+      })
+
+      const choice = response.choices?.[0]
+      console.info(
+        `[Detective-RAG] Tool loop round ${round}: finish_reason=${choice?.finish_reason}` +
+        ` | tool_calls=${choice?.message?.tool_calls?.length ?? 0}` +
+        ` | content=${choice?.message?.content?.slice(0, 60)}`
+      )
+
+      // If the model gave a direct answer (or response had no choices), exit the loop
+      if (!choice || choice.finish_reason !== 'tool_calls' || !choice.message.tool_calls?.length) {
+        raw = choice?.message?.content || ''
+        break
+      }
+
+      // Append the assistant's tool-call message to the conversation
+      messages = [
+        ...messages,
+        {
+          role: 'assistant' as const,
+          content: choice.message.content,
+          tool_calls: choice.message.tool_calls,
+        } as any,
+      ]
+
+      // Resolve every tool call in this round (model may batch multiple calls)
+      let allUnknown = true
+      for (const toolCall of choice.message.tool_calls) {
+        const toolName = toolCall.function.name
+        let toolResult: string
+
+        if (toolName === 'get_asked_questions') {
+          toolResult = buildQuestionHistoryToolResponse(turns)
+          const parsed = JSON.parse(toolResult) as { covered_topics: string[]; available_topics: string[] }
+          console.group('%c🔧 TOOL: get_asked_questions', 'color: #a78bfa; font-weight: bold')
+          console.info('  covered  :', parsed.covered_topics)
+          console.info('  available:', parsed.available_topics)
+          console.groupEnd()
+          allUnknown = false
+
+        } else if (toolName === 'get_remaining_candidates') {
+          toolResult = buildRemainingCandidatesToolResponse(remainingCandidates)
+          const parsed = JSON.parse(toolResult) as { count: number; names: string[] }
+          console.group('%c🔧 TOOL: get_remaining_candidates', 'color: #34d399; font-weight: bold')
+          console.info('  count:', parsed.count)
+          console.info('  names:', parsed.names.slice(0, 10))
+          console.groupEnd()
+          allUnknown = false
+
+        } else if (toolName === 'get_best_question') {
+          toolResult = buildBestQuestionToolResponse(strategicQuestion, remainingCandidates, turns)
+          const parsed = JSON.parse(toolResult) as { question: string | null; reason: string }
+          console.group('%c🔧 TOOL: get_best_question', 'color: #60a5fa; font-weight: bold')
+          console.info('  question:', parsed.question)
+          console.info('  reason  :', parsed.reason)
+          console.groupEnd()
+          allUnknown = false
+
+        } else if (toolName === 'lookup_character') {
+          let parsedArgs: { name?: string } = {}
+          try { parsedArgs = JSON.parse(toolCall.function.arguments || '{}') } catch { /* ignore */ }
+          const lookupName = parsedArgs.name || ''
+          toolResult = buildLookupCharacterToolResponse(lookupName, traits)
+          const parsed = JSON.parse(toolResult) as { found: boolean; compatibility_score?: number; compatibility_label?: string }
+          console.group('%c🔧 TOOL: lookup_character', 'color: #f472b6; font-weight: bold')
+          console.info('  name         :', lookupName)
+          console.info('  found        :', parsed.found)
+          console.info('  compatibility:', parsed.compatibility_label, `(${parsed.compatibility_score})`)
+          console.groupEnd()
+          allUnknown = false
+
+        } else {
+          console.warn(`[Detective-RAG] Unknown tool "${toolName}" — returning error to model`)
+          toolResult = JSON.stringify({
+            error: `Unknown function "${toolName}". Available: ${Array.from(KNOWN_TOOL_NAMES).join(', ')}`,
+          })
+        }
+
+        messages = [
+          ...messages,
+          {
+            role: 'tool' as const,
+            content: toolResult,
+            tool_call_id: toolCall.id,
+          } as any,
+        ]
+      }
+
+      // If every call in this round was unknown, the model is fully hallucinating —
+      // use any text content it already produced and stop looping.
+      if (allUnknown) {
+        raw = choice.message.content || ''
+        console.warn('[Detective-RAG] All tool calls unknown — using direct content')
+        break
+      }
+    }
+  } catch (toolError) {
+    console.warn('[Detective-RAG] Tool calling threw an error — falling back to no-tools call:', toolError)
     const response = await chatCompletion({
       model: DETECTIVE_MODEL,
       messages: [
         { role: 'system', content: RAG_DETECTIVE_SYSTEM_PROMPT },
-        { role: 'user', content: contextPrompt }
+        { role: 'user', content: contextPrompt },
       ],
       temperature: 0.3,
       max_tokens: 150,
     })
+    raw = response.choices[0]?.message?.content || ''
+    console.info('[Detective-RAG] Fallback (no-tools) answer:', raw)
+  }
 
-    const raw = response.choices[0]?.message?.content || ''
+  try {  // validation block — parse and validate the LLM-generated question
     console.info('[Detective-RAG] askNextQuestion raw:', raw)
 
     const json = extractJSON(raw)
@@ -1408,6 +1848,20 @@ Return your response as JSON.`
       }
     }
 
+    // SEMANTIC TOPIC CHECK: Catches questions like "office setting" after "corporate office" was already asked
+    const topicCheck = isTopicAlreadyCovered(questionText, turns)
+    if (topicCheck.covered) {
+      console.group('%c⚠️ Semantic topic duplicate blocked', 'color: #f59e0b; font-weight: bold')
+      console.warn('  new question :', questionText)
+      console.warn('  topic        :', topicCheck.matchedTopic)
+      console.warn('  already asked:', topicCheck.matchedQuestion)
+      console.groupEnd()
+      return {
+        question: getFallbackQuestion(turns.map(t => t.question), traits, turns),
+        topGuesses: ragGuesses.map(g => ({ name: g.name, confidence: g.confidence }))
+      }
+    }
+
     // CRITICAL: Post-LLM validation — reject questions that violate logical implications
     // The LLM may ignore prompt instructions, so enforce rules in code
     if (shouldSkipQuestion(questionText, traits, turns)) {
@@ -1457,6 +1911,9 @@ function normalizeQuestion(question: string): string {
     'comic book': 'comics',
     'video game': 'videogame',
     'anime or manga': 'anime',
+    'originate in a': 'from a',
+    'originate in an': 'from an',
+    'did your character originate': 'is your character from',
     'known for': 'famous for',
     'best actor': 'best actor award',
     'best actress': 'best actress award',
@@ -1480,33 +1937,37 @@ const FALLBACK_QUESTIONS = [
   'Is your character fictional?',
   'Is your character male?',
   'Is your character American?',
-  
+
   // Categories
-  'Is your character from an anime or manga?',
+  'Did your character originate in an anime or manga?',
   'Is your character a superhero?',
   'Is your character an athlete?',
   'Is your character a musician?',
   'Is your character an actor?',
   'Is your character a politician?',
-  'Is your character from a TV show?',
-  'Is your character from a video game?',
-  
+  'Did your character originate in a TV show?',
+  'Did your character originate in a video game?',
+
+  // Actor-specific (comes before generic era questions — actors are always modern)
+  'Has your character won an Oscar?',
+  'Is your character still alive today?',
+  'Is your character known for dramatic or serious roles?',
+  'Is your character known for comedy movies or shows?',
+  'Is your character from the United Kingdom?',
+  'Has your character starred in a famous movie franchise?',
+  'Has your character appeared in a sci-fi or fantasy movie?',
+  'Has your character appeared in a crime or thriller movie?',
+  'Has your character starred in a war or historical movie?',
+
   // Era/Time
   'Did your character live before 1950?',
-  'Is your character still alive today?',
   'Was your character active in the 2000s or later?',
-  
+
   // Characteristics
   'Does your character have superpowers?',
   'Is your character known for comedy?',
-  'Is your character known for action?',
   'Does your character work with a team?',
   'Is your character a villain?',
-
-  // Movies/Franchises (more useful than awards for actors)
-  'Has your character starred in a famous movie franchise?',
-  'Is your character known for dramatic or serious roles?',
-  'Has your character appeared in a sci-fi or fantasy movie?',
 
   // Appearance/Physical
   'Does your character wear a costume or uniform?',
@@ -1514,7 +1975,7 @@ const FALLBACK_QUESTIONS = [
 
   // Origin/Source
   'Did your character originate in a comic book?',
-  'Is your character from Japanese media?',
+  'Does your character come from Japanese media?',
 
   // Achievement/Role
   'Is your character a leader?',
@@ -1560,6 +2021,12 @@ function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], tur
     // Skip questions that violate logical implication rules
     if (shouldSkipQuestion(q, traits, turns)) {
       console.log(`[Detective-RAG] Skipping fallback question (logical implication): "${q}"`)
+      continue
+    }
+
+    // Skip questions whose topic has already been covered
+    if (turns && isTopicAlreadyCovered(q, turns).covered) {
+      console.log(`[Detective-RAG] Skipping fallback question (topic covered): "${q}"`)
       continue
     }
 
@@ -1614,27 +2081,21 @@ export async function askDetective(
     // Match "Is your character X?" pattern
     const guessMatch = questionToAnalyze.match(/^Is your character (.+)\?$/i)
     const capturedText = guessMatch?.[1]?.trim()
-    
-    // List of common trait keywords/patterns (NOT character names)
-    const traitKeywords = [
-      'american', 'male', 'female', 'fictional', 'real', 
-      'an actor', 'an athlete', 'a musician', 'a politician', 'a superhero',
-      'from', 'known for', 'alive', 'dead', 'still alive'
-    ]
-    
-    // Only treat as character guess if it doesn't match trait keywords
-    const isTraitQuestion = traitKeywords.some(kw => capturedText?.toLowerCase().includes(kw))
-    const isCharacterGuess = capturedText && !isTraitQuestion
-    
+
+    // Delegate to isCharacterNameQuestion for consistent, comprehensive detection.
+    // This handles 'a villain', 'a hero', 'from Japanese media', etc. correctly.
+    const isCharacterGuess = capturedText && isCharacterNameQuestion(questionToAnalyze)
+
     console.info(`[Detective-RAG] Question analysis: "${questionToAnalyze}"`)
     console.info(`[Detective-RAG]   Captured: "${capturedText}"`)
-    console.info(`[Detective-RAG]   Is trait question: ${isTraitQuestion}`)
-    console.info(`[Detective-RAG]   Is character guess: ${isCharacterGuess}`)
+    console.info(`[Detective-RAG]   Is character guess: ${!!isCharacterGuess}`)
     
     if (isCharacterGuess && capturedText) {
       if (answerToAnalyze === 'no' || answerToAnalyze === 'probably_not') {
         console.info(`[Detective-RAG] ✗ User rejected guess: ${capturedText}`)
-        updatedRejectedGuesses.push(capturedText)
+        if (!updatedRejectedGuesses.some(r => r.toLowerCase() === capturedText.toLowerCase())) {
+          updatedRejectedGuesses.push(capturedText)
+        }
       } else if (answerToAnalyze === 'yes') {
         console.info(`[Detective-RAG] ✓ User confirmed guess: ${capturedText}!`)
         // This is handled by useGameLoop with CONFIRM_GUESS
@@ -1642,7 +2103,7 @@ export async function askDetective(
     } else {
       // Regular question - extract traits (can be multiple!)
       console.info('[Detective-RAG] Extracting traits from Q&A...')
-      const validTraitKeys = ['category', 'fictional', 'gender', 'origin_medium', 'has_powers', 'alignment', 'species', 'age_group', 'era', 'tv_show_type', 'publisher', 'nationality']
+      const validTraitKeys = ['category', 'fictional', 'gender', 'origin_medium', 'has_powers', 'alignment', 'species', 'age_group', 'tv_show_type', 'publisher', 'nationality', 'has_oscar', 'is_alive']
       const extractedTraits = await extractTraits(questionToAnalyze, answerToAnalyze, turnAdded, validTraitKeys, traits)
       if (extractedTraits.length > 0) {
         newTraits.push(...extractedTraits)

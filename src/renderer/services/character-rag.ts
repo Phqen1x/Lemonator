@@ -335,6 +335,47 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     return matches
   }
   
+  // genre (drama, comedy, action, sci-fi, romance, war, crime, etc.)
+  if (key === 'genre') {
+    const facts = char.distinctive_facts.join(' ').toLowerCase()
+    const genreTerms: Record<string, string[]> = {
+      'drama':      ['drama', 'dramatic'],
+      'comedy':     ['comedy', 'comedian', 'comic', 'funny'],
+      'action':     ['action', 'martial arts'],
+      'sci-fi':     ['sci-fi', 'science fiction', 'fantasy', 'star wars', 'matrix', 'terminator'],
+      'romance':    ['romantic', 'romance', 'rom-com'],
+      'horror':     ['horror'],
+      'war':        ['war', 'world war', 'military', 'historical', 'braveheart', 'schindler'],
+      'crime':      ['crime', 'criminal', 'detective', 'heist', 'thriller', 'gangster'],
+      'thriller':   ['thriller', 'suspense'],
+      'historical': ['historical', 'history', 'period'],
+      'animation':  ['animated', 'animation', 'voice'],
+    }
+    const terms = genreTerms[actualValue] || [actualValue]
+    const genreMatches = terms.some(t => facts.includes(t))
+    return isNegative ? !genreMatches : genreMatches
+  }
+
+  // has_oscar (whether the actor has won an Academy Award)
+  if (key === 'has_oscar') {
+    const facts = char.distinctive_facts.join(' ').toLowerCase()
+    const hasAward = facts.includes('oscar') || facts.includes('academy award')
+    if (isNegative) return !hasAward
+    return hasAward === (actualValue === 'true' || actualValue === 'yes')
+  }
+
+  // is_alive (whether the real person is currently alive; irrelevant for fictional characters)
+  if (key === 'is_alive') {
+    if (char.traits.fictional) return true  // fictional characters: no-op on this trait
+    // Bio fact (index 0) contains birth-death year range like "American actor (1951–2014)" for deceased
+    // En-dashes also appear in award names ("Best Actor – Motion Picture Drama"), so we must
+    // specifically match the YEAR–YEAR pattern rather than any en-dash
+    const bio = char.distinctive_facts[0] || ''
+    const looksAlive = !/\d{4}[–\-]\d{4}/.test(bio) && !bio.toLowerCase().includes('died')
+    if (isNegative) return !looksAlive
+    return looksAlive === (actualValue === 'true' || actualValue === 'yes')
+  }
+
   // Default: search in distinctive facts
   const allText = [
     char.name,
@@ -343,7 +384,7 @@ function characterMatchesTrait(char: CharacterData, trait: Trait): boolean {
     char.appearance || '',
     char.relationships || ''
   ].join(' ').toLowerCase()
-  
+
   return allText.includes(lowerValue)
 }
 
@@ -363,10 +404,28 @@ export function shouldSkipQuestion(
   const qLower = question.toLowerCase()
   const turnCount = turns ? turns.length : 0
 
+  const realPersonCategories = ['actors', 'athletes', 'musicians', 'politicians', 'historical']
   const isNotFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'false' && t.confidence >= 0.7)
+    || confirmedTraits.some(t => t.key === 'category' && realPersonCategories.includes(t.value) && t.confidence >= 0.7)
   const isFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'true' && t.confidence >= 0.7)
   const hasNoPowers = confirmedTraits.some(t => t.key === 'has_powers' && t.value === 'false' && t.confidence >= 0.7)
   const isHuman = confirmedTraits.some(t => t.key === 'species' && t.value === 'human' && t.confidence >= 0.7)
+
+  // Build a set of ruled-out categories from NOT_ traits
+  const ruledOutCategories = new Set(
+    confirmedTraits
+      .filter(t => t.key === 'category' && t.value.startsWith('NOT_') && t.confidence >= 0.7)
+      .map(t => t.value.slice(4)) // strip "NOT_"
+  )
+  // Also infer: if a positive category is confirmed, all other categories are ruled out
+  const confirmedCategory = confirmedTraits.find(
+    t => t.key === 'category' && !t.value.startsWith('NOT_') && t.confidence >= 0.7
+  )
+  if (confirmedCategory) {
+    for (const cat of ['actors', 'athletes', 'musicians', 'politicians', 'historical', 'anime', 'superheroes', 'tv-characters', 'video-games', 'other']) {
+      if (cat !== confirmedCategory.value) ruledOutCategories.add(cat)
+    }
+  }
 
   // Determine alive/dead status from turn history (confirmed yes answers)
   let isAlive = false
@@ -400,6 +459,7 @@ export function shouldSkipQuestion(
       'fly ', 'flight', 'x-ray vision', 'laser', 'energy blast',
       'fire power', 'ice power', 'lightning power', 'mind reading',
       'secret identity', 'alter ego', 'transform', 'power up',
+      'superhero', 'super hero',
     ]
     if (fictionalOnlyKeywords.some(kw => qLower.includes(kw))) {
       return true
@@ -408,12 +468,20 @@ export function shouldSkipQuestion(
     const fictionalOriginKeywords = [
       'originate in an anime', 'originate in a manga', 'originate in a comic',
       'originate in a video game', 'originate in a cartoon',
+      'originate in a tv show', 'originate in a sitcom', 'originate in a drama series',
+      'originate in an animated', 'originate in a film', 'originate in a movie',
       'from an anime', 'from a manga', 'from a comic book',
       'from a video game', 'from a cartoon',
     ]
     if (fictionalOriginKeywords.some(kw => qLower.includes(kw))) {
       return true
     }
+  }
+
+  // --- Rule 1b: Skip "Is your character fictional?" when fictional status is already known ---
+  // Asking actors "are you fictional?" after confirming category=actors is redundant and confusing
+  if ((isNotFictional || isFictional) && /\bfictional\b/.test(qLower) && /^(is|was|are)\s+your\s+character\b/.test(qLower)) {
+    return true
   }
 
   // --- Rule 2: Alive characters can't have died ---
@@ -470,27 +538,111 @@ export function shouldSkipQuestion(
     }
   }
 
-  // --- Rule 6: Fictional characters don't hold real-world political office or win real awards ---
+  // --- Rule 6: Fictional characters don't hold real-world political office, win real awards,
+  //             or belong to real-person database categories ---
   if (isFictional) {
     const realWorldKeywords = [
       'won an oscar', 'won a grammy', 'won an emmy', 'won a nobel',
       'academy award', 'grammy award', 'emmy award', 'nobel prize',
       'elected president', 'served as president', 'served in office',
       'currently in office',
+      // Real-person category questions — fictional characters can't BE these
+      'is your character a politician', 'is your character an actor',
+      'is your character an actress', 'is your character an athlete',
+      'is your character a musician', 'is your character a singer',
+      'is your character a historical figure',
     ]
     if (realWorldKeywords.some(kw => qLower.includes(kw))) {
       return true
     }
   }
 
-  // --- Rule 7: Defer award/trophy questions to late game ---
-  // Most players don't know specific awards. These questions are only useful
-  // when the candidate list is already small. Prefer movie/franchise/role questions first.
-  // Allow award questions only after turn 15 OR when very few candidates remain (≤10).
-  const isAwardQuestion = /\b(oscar|emmy|grammy|golden globe|academy award|nobel|tony award|bafta|sag award|pulitzer|award|prize|trophy|accolade)\b/.test(qLower)
-  if (isAwardQuestion) {
+  // --- Rule 7: Defer obscure award questions to late game ---
+  // Oscar/Academy Award is universally known — never defer it.
+  // Grammy, Emmy, Golden Globe etc. are more obscure — defer until late or small pool.
+  const isObscureAwardQuestion = /\b(emmy|grammy|golden globe|nobel|tony award|bafta|sag award|pulitzer)\b/.test(qLower)
+    || (/\b(award|prize|trophy|accolade)\b/.test(qLower) && !/\b(oscar|academy award)\b/.test(qLower))
+  if (isObscureAwardQuestion) {
     const candidatesSmall = remainingCandidateCount !== undefined && remainingCandidateCount <= 10
     if (turnCount < 15 && !candidatesSmall) {
+      return true
+    }
+  }
+
+  // --- Rule 8: Skip category-specific questions when that category is ruled out ---
+  // e.g. NOT_actors → skip "starred in", "film", "movie role", Oscar, etc.
+  // e.g. NOT_musicians → skip "album", "hit song", "Grammy", etc.
+  if (ruledOutCategories.size > 0) {
+    const categoryKeywords: Record<string, string[]> = {
+      actors: [
+        'starred in', 'star in', 'acted in', 'acting career', 'movie role', 'film role',
+        'box office', 'box-office', 'blockbuster film', 'oscar', 'academy award',
+        'golden globe', 'screen actors', 'on screen', 'on-screen', 'co-star',
+        'leading role', 'supporting role', 'directed by', 'feature film',
+        'movie franchise', 'film franchise', 'sitcom', 'tv show', 'television show',
+        // role/performance phrasings
+        ' role', 'known for dramatic', 'known for serious', 'known for comedy',
+        'dramatic role', 'serious role', 'comedy role', 'dramatic performance',
+        'known for drama', 'known for action', 'known for thriller',
+        'drama films', 'comedy films', 'comedy movies', 'comedy shows',
+        'dramatic films', 'serious films', 'action films', 'action movies',
+      ],
+      musicians: [
+        'album', 'discography', 'hit song', 'music video', 'music career',
+        'tour', 'on tour', 'concert', 'grammy', 'billboard', 'top 40',
+        'record label', 'recording artist', 'debut album', 'released a song',
+        'released an album', 'number one hit', 'band member', 'lead singer',
+        'rapper', 'hip-hop artist', 'rock band',
+      ],
+      athletes: [
+        'championship', 'world cup', 'olympic', 'olympics', 'sport', 'sports',
+        'professional team', 'nba', 'nfl', 'mlb', 'nhl', 'premier league',
+        'world record', 'gold medal', 'playing career', 'athlete',
+        'retired from sport', 'scored', 'played for',
+      ],
+      politicians: [
+        'elected', 'election', 'ran for', 'president', 'senator', 'governor',
+        'prime minister', 'parliament', 'congress', 'political party', 'policy',
+        'legislation', 'bill', 'campaign', 'in office', 'served in',
+      ],
+      superheroes: [
+        'superpower', 'super power', 'superhero', 'super hero', 'villain',
+        'secret identity', 'alter ego', 'marvel', 'dc comics', 'avengers',
+        'justice league', 'cape', 'costume', 'sidekick', 'arch nemesis',
+      ],
+      anime: [
+        'anime', 'manga', 'shonen', 'shojo', 'isekai', 'japanese animation',
+        'japanese animated',
+      ],
+      'video-games': [
+        'video game', 'videogame', 'gaming', 'playstation', 'xbox', 'nintendo',
+        'rpg', 'first-person', 'open world',
+      ],
+    }
+    for (const [cat, keywords] of Object.entries(categoryKeywords)) {
+      if (ruledOutCategories.has(cat) && keywords.some(kw => qLower.includes(kw))) {
+        return true
+      }
+    }
+  }
+
+  // --- Rule 9: Skip nationality questions once nationality is already confirmed ---
+  // e.g. if nationality=american is known, don't ask "Is your character from the United Kingdom?"
+  // (renamed from Rule 8 after new Rule 8 was added above)
+  const confirmedNationality = confirmedTraits.find(t =>
+    t.key === 'nationality' && !t.value.startsWith('NOT_') && t.confidence >= 0.7
+  )
+  if (confirmedNationality) {
+    const nationalityKeywords = [
+      'american', 'british', 'english', 'united kingdom', 'from the uk', 'from the u.k',
+      'from england', 'from britain', 'from america', 'from the united states',
+      'japanese', 'from japan', 'french', 'from france', 'german', 'from germany',
+      'canadian', 'from canada', 'australian', 'from australia',
+      'spanish', 'from spain', 'italian', 'from italy', 'russian', 'from russia',
+      'chinese', 'from china', 'korean', 'from korea', 'indian', 'from india',
+      'nationality', 'from which country', 'what country',
+    ]
+    if (nationalityKeywords.some(kw => qLower.includes(kw))) {
       return true
     }
   }
@@ -513,7 +665,10 @@ export function getMostInformativeQuestion(
   if (remainingCandidates.length === 1) return null // Ready to guess
   
   // Check if character is confirmed as non-fictional or fictional
+  // Real-person categories (actors, athletes, etc.) imply non-fictional even without explicit fictional=false
+  const realPersonCats = ['actors', 'athletes', 'musicians', 'politicians', 'historical']
   const isNotFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'false')
+    || confirmedTraits.some(t => t.key === 'category' && realPersonCats.includes(t.value) && t.confidence >= 0.7)
   const isFictional = confirmedTraits.some(t => t.key === 'fictional' && t.value === 'true')
   
   // Check which categories have been ruled out (NOT_category traits)
@@ -553,16 +708,17 @@ export function getMostInformativeQuestion(
     { q: 'Did your character originate in an anime or manga?', test: (c: CharacterData) => c.category === 'anime', fictionOnly: true },
     { q: 'Is your character a superhero?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
     { q: 'Did your character originate in a comic book?', test: (c: CharacterData) => c.category === 'superheroes', fictionOnly: true },
-    { q: 'Is your character from a video game?', test: (c: CharacterData) => c.category === 'video-games', fictionOnly: true },
-    { q: 'Is your character from a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: false },
+    { q: 'Did your character originate in a video game?', test: (c: CharacterData) => c.category === 'video-games', fictionOnly: true },
+    { q: 'Did your character originate in a TV show?', test: (c: CharacterData) => c.category === 'tv-characters', fictionOnly: true },
     // Real person category questions - mutually exclusive!
     { q: 'Is your character an athlete?', test: (c: CharacterData) => c.category === 'athletes', fictionOnly: false, realPersonOnly: true, categoryRequired: 'athletes' },
     { q: 'Is your character a politician?', test: (c: CharacterData) => c.category === 'politicians', fictionOnly: false, realPersonOnly: true, categoryRequired: 'politicians' },
     { q: 'Is your character a musician or singer?', test: (c: CharacterData) => c.category === 'musicians', fictionOnly: false, realPersonOnly: true, categoryRequired: 'musicians' },
     { q: 'Is your character an actor?', test: (c: CharacterData) => c.category === 'actors', fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     { q: 'Is your character a historical figure (died before 1950)?', test: (c: CharacterData) => {
-      const facts = c.distinctive_facts.join(' ')
-      return /\d{4}–\d{4}/.test(facts) && facts.includes('195') === false && facts.includes('196') === false
+      // Use bio fact (index 0) — year–year pattern indicates deceased
+      const bio = c.distinctive_facts[0] || ''
+      return /\d{4}[–\-]\d{4}/.test(bio) && !bio.includes('195') && !bio.includes('196')
     }, fictionOnly: false, realPersonOnly: true },
     // Additional broad questions for better splitting
     { q: 'Is your character American?', test: (c: CharacterData) => {
@@ -570,8 +726,9 @@ export function getMostInformativeQuestion(
       return facts.includes('american') || facts.includes('united states') || facts.includes('u.s.')
     }, fictionOnly: false },
     { q: 'Is your character still alive today?', test: (c: CharacterData) => {
-      const facts = c.distinctive_facts.join(' ')
-      return !facts.includes('–') && !facts.includes('died')
+      // Use bio fact (index 0) only — year–year pattern indicates deceased; awards use – too
+      const bio = c.distinctive_facts[0] || ''
+      return !/\d{4}[–\-]\d{4}/.test(bio) && !bio.toLowerCase().includes('died')
     }, fictionOnly: false },
     { q: 'Is your character known primarily for comedy?', test: (c: CharacterData) => {
       const facts = c.distinctive_facts.join(' ').toLowerCase()
@@ -771,18 +928,18 @@ export function getMostInformativeQuestion(
     }, fictionOnly: false, realPersonOnly: true, categoryRequired: 'actors' },
     
     // TV Characters  
-    { q: 'Is your character from a sitcom?', test: (c: CharacterData) => {
+    { q: 'Did your character originate in a sitcom?', test: (c: CharacterData) => {
       if (c.category !== 'tv-characters') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
-      return facts.includes('sitcom') || facts.includes('friends') || facts.includes('seinfeld') || 
+      return facts.includes('sitcom') || facts.includes('friends') || facts.includes('seinfeld') ||
              facts.includes('office') || facts.includes('big bang')
     }, fictionOnly: true },
-    { q: 'Is your character from a drama series?', test: (c: CharacterData) => {
+    { q: 'Did your character originate in a drama series?', test: (c: CharacterData) => {
       if (c.category !== 'tv-characters') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('drama') || facts.includes('breaking bad') || facts.includes('game of thrones')
     }, fictionOnly: true },
-    { q: 'Is your character from an animated show?', test: (c: CharacterData) => {
+    { q: 'Did your character originate in an animated show?', test: (c: CharacterData) => {
       if (c.category !== 'tv-characters') return false
       const facts = c.distinctive_facts.join(' ').toLowerCase()
       return facts.includes('animated') || facts.includes('simpsons') || facts.includes('family guy')
