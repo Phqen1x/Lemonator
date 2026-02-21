@@ -258,6 +258,219 @@ const LOOKUP_CHARACTER_TOOL = {
   },
 }
 
+const GET_CHARACTER_SAMPLE_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_character_sample',
+    description:
+      'Get detailed information about up to 3 specific characters by name. ' +
+      'Use this to inspect and compare top candidates to identify discriminating questions. ' +
+      'Example: If top 5 includes "Tom Hanks" and "Tom Cruise", call this to see their full data ' +
+      '(works, nationality, genres) and identify a good discriminating question.',
+    parameters: {
+      type: 'object' as const,
+      properties: {
+        names: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Character names to inspect (up to 3)',
+          maxItems: 3,
+        },
+      },
+      required: ['names'] as string[],
+    },
+  },
+}
+
+const GET_DISCRIMINATING_TRAITS_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_discriminating_traits',
+    description:
+      'Automatically analyze what traits differ between the top remaining candidates. ' +
+      'Returns the most important differences and suggests good discriminating questions. ' +
+      'Use this when you have multiple top candidates and need to identify the best question to ask.',
+    parameters: {
+      type: 'object' as const,
+      properties: {
+        top_n: {
+          type: 'number',
+          description: 'Number of top candidates to analyze (default 5, max 10)',
+          default: 5,
+        },
+      },
+    },
+  },
+}
+
+function buildDiscriminatingTraitsToolResponse(
+  topN: number,
+  remainingCandidates: CharacterData[]
+): string {
+  const n = Math.min(Math.max(1, topN || 5), 10)
+  const topCandidates = remainingCandidates.slice(0, n)
+
+  if (topCandidates.length === 0) {
+    return JSON.stringify({ discriminators: [], note: 'No candidates remaining' })
+  }
+
+  if (topCandidates.length === 1) {
+    return JSON.stringify({
+      discriminators: [],
+      note: `Only 1 candidate remains: ${topCandidates[0].name}`,
+      suggestion: 'Make a guess now',
+    })
+  }
+
+  const discriminators: Array<{
+    trait: string
+    split: string
+    suggested_question: string
+    priority: number
+  }> = []
+
+  // Check alive/dead split
+  const alive = topCandidates.filter(c => c.traits.alive === true).length
+  const dead = topCandidates.filter(c => c.traits.alive === false).length
+  if (alive > 0 && dead > 0) {
+    discriminators.push({
+      trait: 'alive',
+      split: `${alive} alive, ${dead} deceased`,
+      suggested_question: 'Is your character still alive today?',
+      priority: 1,
+    })
+  }
+
+  // Check gender split
+  const male = topCandidates.filter(c => c.traits.gender === 'male').length
+  const female = topCandidates.filter(c => c.traits.gender === 'female').length
+  if (male > 0 && female > 0) {
+    discriminators.push({
+      trait: 'gender',
+      split: `${male} male, ${female} female`,
+      suggested_question: 'Is your character male?',
+      priority: 1,
+    })
+  }
+
+  // Check nationality split
+  const nationalities = new Map<string, number>()
+  topCandidates.forEach(c => {
+    const nat = c.traits.nationality || 'unknown'
+    nationalities.set(nat, (nationalities.get(nat) || 0) + 1)
+  })
+  if (nationalities.size > 1 && !nationalities.has('unknown')) {
+    const splits = Array.from(nationalities.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([nat, count]) => `${count} ${nat}`)
+      .join(', ')
+    const mostCommon = Array.from(nationalities.entries()).sort((a, b) => b[1] - a[1])[0][0]
+    discriminators.push({
+      trait: 'nationality',
+      split: splits,
+      suggested_question: `Is your character ${mostCommon === 'United States' ? 'American' : mostCommon}?`,
+      priority: 2,
+    })
+  }
+
+  // Check category split
+  const categories = new Map<string, number>()
+  topCandidates.forEach(c => {
+    categories.set(c.category, (categories.get(c.category) || 0) + 1)
+  })
+  if (categories.size > 1) {
+    const splits = Array.from(categories.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, count]) => `${count} ${cat}`)
+      .join(', ')
+    const mostCommon = Array.from(categories.entries()).sort((a, b) => b[1] - a[1])[0][0]
+    discriminators.push({
+      trait: 'category',
+      split: splits,
+      suggested_question: `Is your character ${mostCommon === 'actors' ? 'an actor' : mostCommon === 'athletes' ? 'an athlete' : 'a ' + mostCommon.slice(0, -1)}?`,
+      priority: 1,
+    })
+  }
+
+  // Check birth decade split (for real people)
+  const decades = new Map<number, number>()
+  topCandidates.forEach(c => {
+    if (c.traits.birth_decade != null) {
+      decades.set(c.traits.birth_decade, (decades.get(c.traits.birth_decade) || 0) + 1)
+    }
+  })
+  if (decades.size >= 2) {
+    const splits = Array.from(decades.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([decade, count]) => `${count} born ${decade}s`)
+      .join(', ')
+    const medianDecade = Array.from(decades.keys()).sort((a, b) => a - b)[Math.floor(decades.size / 2)]
+    const threshold = medianDecade + (medianDecade < 1980 ? 20 : 0)
+    discriminators.push({
+      trait: 'birth_decade',
+      split: splits,
+      suggested_question: `Was this person born before ${threshold}?`,
+      priority: 2,
+    })
+  }
+
+  // Sort by priority (1 = highest)
+  discriminators.sort((a, b) => a.priority - b.priority)
+
+  return JSON.stringify({
+    analyzed_candidates: topCandidates.map(c => c.name),
+    discriminators: discriminators.slice(0, 5),  // Return top 5 discriminators
+    recommendation:
+      discriminators.length > 0
+        ? `Best question: "${discriminators[0].suggested_question}" (splits: ${discriminators[0].split})`
+        : 'Top candidates are very similar. Ask about specific works or characteristics.',
+  }, null, 2)
+}
+
+function buildCharacterSampleToolResponse(names: string[]): string {
+  if (!names || names.length === 0) {
+    return JSON.stringify({ error: 'names parameter is required and must be a non-empty array' })
+  }
+
+  if (names.length > 3) {
+    return JSON.stringify({ error: 'Maximum 3 characters allowed per request' })
+  }
+
+  const results = names.map(name => {
+    const char = getCharacterByName(name)
+    if (!char) {
+      return { name, found: false }
+    }
+
+    return {
+      found: true,
+      name: char.name,
+      category: char.category,
+      traits: {
+        fictional: char.traits.fictional,
+        gender: char.traits.gender,
+        nationality: char.traits.nationality,
+        alive: char.traits.alive,
+        birth_decade: char.traits.birth_decade,
+      },
+      distinctive_facts: char.distinctive_facts.slice(0, 3),
+      signature_works: char.signature_works.slice(0, 3).map(w => ({
+        name: w.name,
+        type: w.type,
+        year: w.year,
+      })),
+      relationships: {
+        spouse: char.relationships?.spouse || [],
+        children: char.relationships?.children || [],
+        in_db: char.relationships?.in_db || [],
+      },
+      sitelink_count: char.sitelink_count,
+    }
+  })
+
+  return JSON.stringify({ characters: results }, null, 2)
+}
+
 function buildQuestionHistoryToolResponse(
   turns: Array<{ question: string; answer: AnswerValue }>
 ): string {
@@ -1267,7 +1480,8 @@ async function askNextQuestion(
   }
 
   // Get context about remaining candidates for the AI
-  const candidateContext = getCandidateContext(remainingCandidates, 5)
+  // Pass turn number for progressive detail (minimal early game, full details late game)
+  const candidateContext = getCandidateContext(remainingCandidates, 5, turns.length)
 
   // CRITICAL: Detect logically unique trait combinations that identify a single person
   // Examples:
@@ -1634,6 +1848,8 @@ Return your response as JSON.`
     GET_REMAINING_CANDIDATES_TOOL,
     GET_BEST_QUESTION_TOOL,
     LOOKUP_CHARACTER_TOOL,
+    GET_CHARACTER_SAMPLE_TOOL,
+    GET_DISCRIMINATING_TRAITS_TOOL,
   ]
   const KNOWN_TOOL_NAMES = new Set(ALL_TOOLS.map(t => t.function.name))
   const MAX_TOOL_ROUNDS = 5
@@ -1729,6 +1945,33 @@ Return your response as JSON.`
           console.info('  name         :', lookupName)
           console.info('  found        :', parsed.found)
           console.info('  compatibility:', parsed.compatibility_label, `(${parsed.compatibility_score})`)
+          console.groupEnd()
+          allUnknown = false
+
+        } else if (toolName === 'get_character_sample') {
+          let parsedArgs: { names?: string[] } = {}
+          try { parsedArgs = JSON.parse(toolCall.function.arguments || '{}') } catch { /* ignore */ }
+          const names = parsedArgs.names || []
+          toolResult = buildCharacterSampleToolResponse(names)
+          const parsed = JSON.parse(toolResult) as { characters?: Array<{name: string, found: boolean}> }
+          console.group('%c🔧 TOOL: get_character_sample', 'color: #10b981; font-weight: bold')
+          console.info('  requested    :', names.join(', '))
+          console.info('  found        :', parsed.characters?.filter(c => c.found).map(c => c.name).join(', ') || 'none')
+          console.groupEnd()
+          allUnknown = false
+
+        } else if (toolName === 'get_discriminating_traits') {
+          let parsedArgs: { top_n?: number } = {}
+          try { parsedArgs = JSON.parse(toolCall.function.arguments || '{}') } catch { /* ignore */ }
+          const topN = parsedArgs.top_n || 5
+          toolResult = buildDiscriminatingTraitsToolResponse(topN, remainingCandidates)
+          const parsed = JSON.parse(toolResult) as { discriminators?: Array<{trait: string, suggested_question: string}> }
+          console.group('%c🔧 TOOL: get_discriminating_traits', 'color: #8b5cf6; font-weight: bold')
+          console.info('  analyzing    :', `top ${topN} candidates`)
+          console.info('  discriminators:', parsed.discriminators?.length || 0)
+          if (parsed.discriminators && parsed.discriminators.length > 0) {
+            console.info('  top suggestion:', parsed.discriminators[0].suggested_question)
+          }
           console.groupEnd()
           allUnknown = false
 
@@ -1984,7 +2227,13 @@ const FALLBACK_QUESTIONS = [
 
   // Achievement/Role
   'Is your character a leader?',
-  'Has your character won major awards?'
+  'Has your character won major awards?',
+
+  // Ultimate fallbacks (rotate through these if all above are exhausted)
+  'Is your character well-known internationally?',
+  'Is your character associated with a specific location or place?',
+  'Does your character have a distinctive personality trait?',
+  'Is your character known for a specific catchphrase or saying?',
 ]
 
 function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], turns?: Array<{ question: string; answer: AnswerValue }>): string {
@@ -2038,8 +2287,10 @@ function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], tur
     return q
   }
 
-  // All fallback questions exhausted - return a generic one
-  return 'Is your character well-known internationally?'
+  // All fallback questions exhausted (should be rare now with ultimate fallbacks in array)
+  // Use a very generic question as absolute last resort
+  console.warn('[Detective-RAG] All fallback questions exhausted! Using emergency fallback.')
+  return 'Does your character have any distinctive features or characteristics?'
 }
 
 /**
