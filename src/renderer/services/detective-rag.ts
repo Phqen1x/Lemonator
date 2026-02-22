@@ -136,7 +136,8 @@ const QUESTION_TOPICS: Record<string, string[]> = {
   'trait/gender':        ['male', 'female', 'man', 'woman', 'boy', 'girl', 'his gender', 'her gender'],
   'trait/powers':        ['superpower', 'super power', 'powers', 'abilities', 'magic', 'supernatural', 'fly ', 'teleport'],
   'trait/alignment':     ['villain', 'hero', 'protagonist', 'antagonist', 'evil', 'bad guy'],
-  'trait/age_era':       ['still alive', 'alive today', 'born before', 'active in the', 'died before', 'historical figure', '20th century', '21st century'],
+  'trait/age_era':       ['born before', 'active in the', 'died before', 'historical figure', '20th century', '21st century'],
+  'trait/alive':         ['still alive', 'alive today', 'living today', 'currently alive', 'is your character dead', 'passed away'],
   'trait/nationality':   ['american', 'british', 'english', 'japanese', 'french', 'german', 'european', 'united kingdom', 'from the uk', 'from england', 'from britain', 'from japan', 'from france', 'nationality', 'from which country'],
   'trait/species':       ['human', 'alien', 'robot', 'animal', 'creature'],
   'trait/intelligence':  ['intelligent', 'genius', 'smart', 'wisdom', 'clever'],
@@ -862,13 +863,27 @@ Extract trait(s) as a JSON array.${contextualHint}${existingTraitsContext}`
     const raw = response.choices[0]?.message?.content || ''
     console.info('[Detective-RAG] extractTraits raw:', raw)
     
-    const traits = parseTraits(raw)
-    
+    let traits = parseTraits(raw)
+
     if (traits.length === 0) {
       console.warn('[Detective-RAG] No valid traits extracted from:', raw)
       return []
     }
-    
+
+    // REAL PERSON GUARD: if fictional=false is already established, filter out
+    // impossible traits like has_powers=true (real people don't have superpowers).
+    // This prevents the LLM from hallucinating powers from "appeared in sci-fi movie".
+    const fictionalIsKnownFalse = existingTraits?.some(
+      t => t.key === 'fictional' && t.value === 'false' && t.confidence >= 0.85
+    )
+    if (fictionalIsKnownFalse) {
+      const before = traits.length
+      traits = traits.filter(t => !(t.key === 'has_powers' && t.value === 'true'))
+      if (traits.length < before) {
+        console.warn('[Detective-RAG] 🚫 Filtered has_powers=true for confirmed real person')
+      }
+    }
+
     // CRITICAL: Validate extracted traits don't contradict existing traits
     if (existingTraits && existingTraits.length > 0) {
       const contradictions = traits.filter(newTrait => {
@@ -1661,7 +1676,11 @@ async function askNextQuestion(
 
   // Build context for AI
   const traitsList = traits.map(t => `- ${t.key}: ${t.value} (${Math.round(t.confidence * 100)}%)`).join('\n')
-  const turnsList = turns.map((t, i) => `${i + 1}. Q: "${t.question}" A: ${t.answer}`).join('\n')
+  // Truncate turn history to avoid local-LLM context overflow on long games.
+  // Keep the most recent 12 turns; earlier context is already captured in traits.
+  const turnsToShow = turns.length > 15 ? turns.slice(-12) : turns
+  const turnOffset = turns.length - turnsToShow.length
+  const turnsList = turnsToShow.map((t, i) => `${turnOffset + i + 1}. Q: "${t.question}" A: ${t.answer}`).join('\n')
 
   // Check which categorical questions have been asked
   const askedQuestionsLower = turns.map(t => t.question.toLowerCase())
@@ -2000,6 +2019,27 @@ Return your response as JSON.`
         break
       }
     }
+
+    // If the tool loop produced an empty response (model overloaded / context too long),
+    // retry once with a minimal no-tools prompt so we still get a real question.
+    if (!raw) {
+      console.warn('[Detective-RAG] Tool loop returned empty — retrying with minimal no-tools prompt')
+      try {
+        const retryResponse = await chatCompletion({
+          model: DETECTIVE_MODEL,
+          messages: [
+            { role: 'system', content: RAG_DETECTIVE_SYSTEM_PROMPT },
+            { role: 'user', content: contextPrompt },
+          ],
+          temperature: 0.4,
+          max_tokens: 150,
+        })
+        raw = retryResponse.choices[0]?.message?.content || ''
+        console.info('[Detective-RAG] No-tools retry response:', raw)
+      } catch (retryErr) {
+        console.warn('[Detective-RAG] No-tools retry also failed:', retryErr)
+      }
+    }
   } catch (toolError) {
     console.warn('[Detective-RAG] Tool calling threw an error — falling back to no-tools call:', toolError)
     const response = await chatCompletion({
@@ -2229,11 +2269,34 @@ const FALLBACK_QUESTIONS = [
   'Is your character a leader?',
   'Has your character won major awards?',
 
+  // Actor deep-dive (additional discrimination for actor-confirmed games)
+  'Is your character known primarily for action movies?',
+  'Has your character worked with director Martin Scorsese?',
+  'Has your character played a real historical person on screen?',
+  'Has your character starred in a romantic drama or love story?',
+  'Is your character known for playing morally ambiguous characters?',
+  'Has your character appeared in a Quentin Tarantino film?',
+  'Has your character starred in a superhero movie?',
+  'Is your character known for their voice acting?',
+  'Has your character directed a film in addition to acting?',
+  'Is your character primarily known for independent films?',
+  'Has your character appeared in a Steven Spielberg film?',
+  'Is your character known for playing tough or gritty characters?',
+  'Has your character won a Golden Globe award?',
+  'Is your character over 60 years old?',
+  'Was your character a major star before the year 2000?',
+  'Is your character known for playing charismatic or charming roles?',
+  'Has your character had a major role in a biographical film?',
+
   // Ultimate fallbacks (rotate through these if all above are exhausted)
   'Is your character well-known internationally?',
   'Is your character associated with a specific location or place?',
   'Does your character have a distinctive personality trait?',
   'Is your character known for a specific catchphrase or saying?',
+  'Has your character appeared in more than 10 major films?',
+  'Is your character known for serious dramatic performances?',
+  'Does your character have a signature acting style?',
+  'Is your character considered a Hollywood legend?',
 ]
 
 function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], turns?: Array<{ question: string; answer: AnswerValue }>): string {
@@ -2287,10 +2350,26 @@ function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], tur
     return q
   }
 
-  // All fallback questions exhausted (should be rare now with ultimate fallbacks in array)
-  // Use a very generic question as absolute last resort
-  console.warn('[Detective-RAG] All fallback questions exhausted! Using emergency fallback.')
-  return 'Does your character have any distinctive features or characteristics?'
+  // All fallback questions exhausted — use a rotating emergency pool so we never
+  // repeat the exact same question indefinitely. The pool questions are intentionally
+  // open-ended and span dimensions not covered by the structured list above.
+  const EMERGENCY_POOL = [
+    'Is your character considered one of the greatest in their field?',
+    'Is your character associated with a specific decade?',
+    'Is your character known for a single defining work or role?',
+    'Has your character ever won a lifetime achievement award?',
+    'Is your character known for collaborating with the same creative partners repeatedly?',
+    'Is your character primarily known in their home country rather than internationally?',
+    'Has your character ever made a highly anticipated comeback or return?',
+    'Is your character known for a very long career spanning multiple decades?',
+    'Has your character ever been considered controversial or polarizing?',
+    'Is your character known for transforming their appearance for roles?',
+  ]
+  console.warn('[Detective-RAG] All fallback questions exhausted! Using emergency pool rotation.')
+  // Pick an emergency question not yet asked
+  const askedNorm = askedQuestions.map(q => normalizeQuestion(q))
+  const unusedEmergency = EMERGENCY_POOL.find(q => !askedNorm.includes(normalizeQuestion(q)))
+  return unusedEmergency ?? EMERGENCY_POOL[askedQuestions.length % EMERGENCY_POOL.length]
 }
 
 /**
