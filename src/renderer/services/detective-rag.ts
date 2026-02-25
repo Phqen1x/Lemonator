@@ -136,7 +136,8 @@ const QUESTION_TOPICS: Record<string, string[]> = {
   'trait/gender':        ['male', 'female', 'man', 'woman', 'boy', 'girl', 'his gender', 'her gender'],
   'trait/powers':        ['superpower', 'super power', 'powers', 'abilities', 'magic', 'supernatural', 'fly ', 'teleport'],
   'trait/alignment':     ['villain', 'hero', 'protagonist', 'antagonist', 'evil', 'bad guy'],
-  'trait/age_era':       ['still alive', 'alive today', 'born before', 'active in the', 'died before', 'historical figure', '20th century', '21st century'],
+  'trait/age_era':       ['born before', 'active in the', 'died before', 'historical figure', '20th century', '21st century'],
+  'trait/alive':         ['still alive', 'alive today', 'living today', 'currently alive', 'is your character dead', 'passed away'],
   'trait/nationality':   ['american', 'british', 'english', 'japanese', 'french', 'german', 'european', 'united kingdom', 'from the uk', 'from england', 'from britain', 'from japan', 'from france', 'nationality', 'from which country'],
   'trait/species':       ['human', 'alien', 'robot', 'animal', 'creature'],
   'trait/intelligence':  ['intelligent', 'genius', 'smart', 'wisdom', 'clever'],
@@ -256,6 +257,219 @@ const LOOKUP_CHARACTER_TOOL = {
       required: ['name'] as string[],
     },
   },
+}
+
+const GET_CHARACTER_SAMPLE_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_character_sample',
+    description:
+      'Get detailed information about up to 3 specific characters by name. ' +
+      'Use this to inspect and compare top candidates to identify discriminating questions. ' +
+      'Example: If top 5 includes "Tom Hanks" and "Tom Cruise", call this to see their full data ' +
+      '(works, nationality, genres) and identify a good discriminating question.',
+    parameters: {
+      type: 'object' as const,
+      properties: {
+        names: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Character names to inspect (up to 3)',
+          maxItems: 3,
+        },
+      },
+      required: ['names'] as string[],
+    },
+  },
+}
+
+const GET_DISCRIMINATING_TRAITS_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'get_discriminating_traits',
+    description:
+      'Automatically analyze what traits differ between the top remaining candidates. ' +
+      'Returns the most important differences and suggests good discriminating questions. ' +
+      'Use this when you have multiple top candidates and need to identify the best question to ask.',
+    parameters: {
+      type: 'object' as const,
+      properties: {
+        top_n: {
+          type: 'number',
+          description: 'Number of top candidates to analyze (default 5, max 10)',
+          default: 5,
+        },
+      },
+    },
+  },
+}
+
+function buildDiscriminatingTraitsToolResponse(
+  topN: number,
+  remainingCandidates: CharacterData[]
+): string {
+  const n = Math.min(Math.max(1, topN || 5), 10)
+  const topCandidates = remainingCandidates.slice(0, n)
+
+  if (topCandidates.length === 0) {
+    return JSON.stringify({ discriminators: [], note: 'No candidates remaining' })
+  }
+
+  if (topCandidates.length === 1) {
+    return JSON.stringify({
+      discriminators: [],
+      note: `Only 1 candidate remains: ${topCandidates[0].name}`,
+      suggestion: 'Make a guess now',
+    })
+  }
+
+  const discriminators: Array<{
+    trait: string
+    split: string
+    suggested_question: string
+    priority: number
+  }> = []
+
+  // Check alive/dead split
+  const alive = topCandidates.filter(c => c.traits.alive === true).length
+  const dead = topCandidates.filter(c => c.traits.alive === false).length
+  if (alive > 0 && dead > 0) {
+    discriminators.push({
+      trait: 'alive',
+      split: `${alive} alive, ${dead} deceased`,
+      suggested_question: 'Is your character still alive today?',
+      priority: 1,
+    })
+  }
+
+  // Check gender split
+  const male = topCandidates.filter(c => c.traits.gender === 'male').length
+  const female = topCandidates.filter(c => c.traits.gender === 'female').length
+  if (male > 0 && female > 0) {
+    discriminators.push({
+      trait: 'gender',
+      split: `${male} male, ${female} female`,
+      suggested_question: 'Is your character male?',
+      priority: 1,
+    })
+  }
+
+  // Check nationality split
+  const nationalities = new Map<string, number>()
+  topCandidates.forEach(c => {
+    const nat = c.traits.nationality || 'unknown'
+    nationalities.set(nat, (nationalities.get(nat) || 0) + 1)
+  })
+  if (nationalities.size > 1 && !nationalities.has('unknown')) {
+    const splits = Array.from(nationalities.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([nat, count]) => `${count} ${nat}`)
+      .join(', ')
+    const mostCommon = Array.from(nationalities.entries()).sort((a, b) => b[1] - a[1])[0][0]
+    discriminators.push({
+      trait: 'nationality',
+      split: splits,
+      suggested_question: `Is your character ${mostCommon === 'United States' ? 'American' : mostCommon}?`,
+      priority: 2,
+    })
+  }
+
+  // Check category split
+  const categories = new Map<string, number>()
+  topCandidates.forEach(c => {
+    categories.set(c.category, (categories.get(c.category) || 0) + 1)
+  })
+  if (categories.size > 1) {
+    const splits = Array.from(categories.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, count]) => `${count} ${cat}`)
+      .join(', ')
+    const mostCommon = Array.from(categories.entries()).sort((a, b) => b[1] - a[1])[0][0]
+    discriminators.push({
+      trait: 'category',
+      split: splits,
+      suggested_question: `Is your character ${mostCommon === 'actors' ? 'an actor' : mostCommon === 'athletes' ? 'an athlete' : 'a ' + mostCommon.slice(0, -1)}?`,
+      priority: 1,
+    })
+  }
+
+  // Check birth decade split (for real people)
+  const decades = new Map<number, number>()
+  topCandidates.forEach(c => {
+    if (c.traits.birth_decade != null) {
+      decades.set(c.traits.birth_decade, (decades.get(c.traits.birth_decade) || 0) + 1)
+    }
+  })
+  if (decades.size >= 2) {
+    const splits = Array.from(decades.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([decade, count]) => `${count} born ${decade}s`)
+      .join(', ')
+    const medianDecade = Array.from(decades.keys()).sort((a, b) => a - b)[Math.floor(decades.size / 2)]
+    const threshold = medianDecade + (medianDecade < 1980 ? 20 : 0)
+    discriminators.push({
+      trait: 'birth_decade',
+      split: splits,
+      suggested_question: `Was this person born before ${threshold}?`,
+      priority: 2,
+    })
+  }
+
+  // Sort by priority (1 = highest)
+  discriminators.sort((a, b) => a.priority - b.priority)
+
+  return JSON.stringify({
+    analyzed_candidates: topCandidates.map(c => c.name),
+    discriminators: discriminators.slice(0, 5),  // Return top 5 discriminators
+    recommendation:
+      discriminators.length > 0
+        ? `Best question: "${discriminators[0].suggested_question}" (splits: ${discriminators[0].split})`
+        : 'Top candidates are very similar. Ask about specific works or characteristics.',
+  }, null, 2)
+}
+
+function buildCharacterSampleToolResponse(names: string[]): string {
+  if (!names || names.length === 0) {
+    return JSON.stringify({ error: 'names parameter is required and must be a non-empty array' })
+  }
+
+  if (names.length > 3) {
+    return JSON.stringify({ error: 'Maximum 3 characters allowed per request' })
+  }
+
+  const results = names.map(name => {
+    const char = getCharacterByName(name)
+    if (!char) {
+      return { name, found: false }
+    }
+
+    return {
+      found: true,
+      name: char.name,
+      category: char.category,
+      traits: {
+        fictional: char.traits.fictional,
+        gender: char.traits.gender,
+        nationality: char.traits.nationality,
+        alive: char.traits.alive,
+        birth_decade: char.traits.birth_decade,
+      },
+      distinctive_facts: char.distinctive_facts.slice(0, 3),
+      signature_works: char.signature_works.slice(0, 3).map(w => ({
+        name: w.name,
+        type: w.type,
+        year: w.year,
+      })),
+      relationships: {
+        spouse: char.relationships?.spouse || [],
+        children: char.relationships?.children || [],
+        in_db: char.relationships?.in_db || [],
+      },
+      sitelink_count: char.sitelink_count,
+    }
+  })
+
+  return JSON.stringify({ characters: results }, null, 2)
 }
 
 function buildQuestionHistoryToolResponse(
@@ -398,6 +612,11 @@ function buildLookupCharacterToolResponse(
     category: char.category,
     traits: char.traits,
     distinctive_facts: char.distinctive_facts.slice(0, 5),
+    signature_works: char.signature_works.slice(0, 5).map(w => ({
+      name: w.name,
+      type: w.type,
+      year: w.year,
+    })),
     compatibility_score: Math.round(score * 100) / 100,
     compatibility_label:
       score >= 0.8 ? 'strong match' : score >= 0.5 ? 'partial match' : 'weak match',
@@ -471,7 +690,7 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 - fictional (true/false) - Is the character entirely made up vs a real person?
 - gender (male/female)
 - category (actors, athletes, musicians, politicians, historical, anime, superheroes, tv-characters, video-games, other)
-- origin_medium (anime, movie, tv, video-game, comic-book)
+- media_origin (anime, movie, tv, video-game, comic-book)
 - has_powers (true/false) - Supernatural/superhuman abilities
 - alignment (hero, villain)
 - species (human, alien, robot, god, animal, etc.)
@@ -518,7 +737,7 @@ const TRAIT_EXTRACTOR_PROMPT = `Extract a structured trait from this Q&A.
 5. IMPORTANT: Characters can have overlapping traits
    - A character like "Iron Man" could be:
      * fictional=true (Tony Stark is a made-up character)
-     * origin_medium=movie (from Marvel movies)
+     * media_origin=movie (from Marvel movies)
      * category=superheroes (a superhero character)
    - Someone thinking of the character (not the actor) would say "yes" to fictional
    - Someone thinking of Robert Downey Jr. (the actor) would say "no" to fictional
@@ -644,19 +863,33 @@ Extract trait(s) as a JSON array.${contextualHint}${existingTraitsContext}`
     const raw = response.choices[0]?.message?.content || ''
     console.info('[Detective-RAG] extractTraits raw:', raw)
     
-    const traits = parseTraits(raw)
-    
+    let traits = parseTraits(raw)
+
     if (traits.length === 0) {
       console.warn('[Detective-RAG] No valid traits extracted from:', raw)
       return []
     }
-    
+
+    // REAL PERSON GUARD: if fictional=false is already established, filter out
+    // impossible traits like has_powers=true (real people don't have superpowers).
+    // This prevents the LLM from hallucinating powers from "appeared in sci-fi movie".
+    const fictionalIsKnownFalse = existingTraits?.some(
+      t => t.key === 'fictional' && t.value === 'false' && t.confidence >= 0.85
+    )
+    if (fictionalIsKnownFalse) {
+      const before = traits.length
+      traits = traits.filter(t => !(t.key === 'has_powers' && t.value === 'true'))
+      if (traits.length < before) {
+        console.warn('[Detective-RAG] 🚫 Filtered has_powers=true for confirmed real person')
+      }
+    }
+
     // CRITICAL: Validate extracted traits don't contradict existing traits
     if (existingTraits && existingTraits.length > 0) {
       const contradictions = traits.filter(newTrait => {
         return existingTraits.some(existingTrait => {
           // Same key but different value (for single-valued traits)
-          if (newTrait.key === existingTrait.key && newTrait.key !== 'category' && newTrait.key !== 'origin_medium') {
+          if (newTrait.key === existingTrait.key && newTrait.key !== 'category' && newTrait.key !== 'media_origin') {
             // Allow same value (redundant but not contradictory)
             if (newTrait.value === existingTrait.value) return false
             
@@ -664,8 +897,8 @@ Extract trait(s) as a JSON array.${contextualHint}${existingTraitsContext}`
             return true
           }
           
-          // For category/origin_medium: check NOT_X vs X contradictions
-          if (newTrait.key === existingTrait.key && (newTrait.key === 'category' || newTrait.key === 'origin_medium')) {
+          // For category/media_origin: check NOT_X vs X contradictions
+          if (newTrait.key === existingTrait.key && (newTrait.key === 'category' || newTrait.key === 'media_origin')) {
             const newIsNegative = newTrait.value.startsWith('NOT_')
             const existingIsNegative = existingTrait.value.startsWith('NOT_')
             const newBase = newIsNegative ? newTrait.value.slice(4) : newTrait.value
@@ -1262,7 +1495,8 @@ async function askNextQuestion(
   }
 
   // Get context about remaining candidates for the AI
-  const candidateContext = getCandidateContext(remainingCandidates, 5)
+  // Pass turn number for progressive detail (minimal early game, full details late game)
+  const candidateContext = getCandidateContext(remainingCandidates, 5, turns.length)
 
   // CRITICAL: Detect logically unique trait combinations that identify a single person
   // Examples:
@@ -1442,7 +1676,11 @@ async function askNextQuestion(
 
   // Build context for AI
   const traitsList = traits.map(t => `- ${t.key}: ${t.value} (${Math.round(t.confidence * 100)}%)`).join('\n')
-  const turnsList = turns.map((t, i) => `${i + 1}. Q: "${t.question}" A: ${t.answer}`).join('\n')
+  // Truncate turn history to avoid local-LLM context overflow on long games.
+  // Keep the most recent 12 turns; earlier context is already captured in traits.
+  const turnsToShow = turns.length > 15 ? turns.slice(-12) : turns
+  const turnOffset = turns.length - turnsToShow.length
+  const turnsList = turnsToShow.map((t, i) => `${turnOffset + i + 1}. Q: "${t.question}" A: ${t.answer}`).join('\n')
 
   // Check which categorical questions have been asked
   const askedQuestionsLower = turns.map(t => t.question.toLowerCase())
@@ -1517,7 +1755,7 @@ async function askNextQuestion(
     )
     console.log('[Detective-RAG] Added fictionality rule: Character is real → no fictional origins or superpowers')
   } else if (fictionalTrait && fictionalTrait.value === 'true' && fictionalTrait.confidence >= 0.85) {
-    const originMediums = traits.filter(t => t.key === 'origin_medium' && !t.value.startsWith('NOT_'))
+    const originMediums = traits.filter(t => t.key === 'media_origin' && !t.value.startsWith('NOT_'))
     if (originMediums.length > 0) {
       contradictionRules.push(
         `Character is from ${originMediums[0].value} — focus on questions about this origin`
@@ -1629,6 +1867,8 @@ Return your response as JSON.`
     GET_REMAINING_CANDIDATES_TOOL,
     GET_BEST_QUESTION_TOOL,
     LOOKUP_CHARACTER_TOOL,
+    GET_CHARACTER_SAMPLE_TOOL,
+    GET_DISCRIMINATING_TRAITS_TOOL,
   ]
   const KNOWN_TOOL_NAMES = new Set(ALL_TOOLS.map(t => t.function.name))
   const MAX_TOOL_ROUNDS = 5
@@ -1727,6 +1967,33 @@ Return your response as JSON.`
           console.groupEnd()
           allUnknown = false
 
+        } else if (toolName === 'get_character_sample') {
+          let parsedArgs: { names?: string[] } = {}
+          try { parsedArgs = JSON.parse(toolCall.function.arguments || '{}') } catch { /* ignore */ }
+          const names = parsedArgs.names || []
+          toolResult = buildCharacterSampleToolResponse(names)
+          const parsed = JSON.parse(toolResult) as { characters?: Array<{name: string, found: boolean}> }
+          console.group('%c🔧 TOOL: get_character_sample', 'color: #10b981; font-weight: bold')
+          console.info('  requested    :', names.join(', '))
+          console.info('  found        :', parsed.characters?.filter(c => c.found).map(c => c.name).join(', ') || 'none')
+          console.groupEnd()
+          allUnknown = false
+
+        } else if (toolName === 'get_discriminating_traits') {
+          let parsedArgs: { top_n?: number } = {}
+          try { parsedArgs = JSON.parse(toolCall.function.arguments || '{}') } catch { /* ignore */ }
+          const topN = parsedArgs.top_n || 5
+          toolResult = buildDiscriminatingTraitsToolResponse(topN, remainingCandidates)
+          const parsed = JSON.parse(toolResult) as { discriminators?: Array<{trait: string, suggested_question: string}> }
+          console.group('%c🔧 TOOL: get_discriminating_traits', 'color: #8b5cf6; font-weight: bold')
+          console.info('  analyzing    :', `top ${topN} candidates`)
+          console.info('  discriminators:', parsed.discriminators?.length || 0)
+          if (parsed.discriminators && parsed.discriminators.length > 0) {
+            console.info('  top suggestion:', parsed.discriminators[0].suggested_question)
+          }
+          console.groupEnd()
+          allUnknown = false
+
         } else {
           console.warn(`[Detective-RAG] Unknown tool "${toolName}" — returning error to model`)
           toolResult = JSON.stringify({
@@ -1750,6 +2017,27 @@ Return your response as JSON.`
         raw = choice.message.content || ''
         console.warn('[Detective-RAG] All tool calls unknown — using direct content')
         break
+      }
+    }
+
+    // If the tool loop produced an empty response (model overloaded / context too long),
+    // retry once with a minimal no-tools prompt so we still get a real question.
+    if (!raw) {
+      console.warn('[Detective-RAG] Tool loop returned empty — retrying with minimal no-tools prompt')
+      try {
+        const retryResponse = await chatCompletion({
+          model: DETECTIVE_MODEL,
+          messages: [
+            { role: 'system', content: RAG_DETECTIVE_SYSTEM_PROMPT },
+            { role: 'user', content: contextPrompt },
+          ],
+          temperature: 0.4,
+          max_tokens: 150,
+        })
+        raw = retryResponse.choices[0]?.message?.content || ''
+        console.info('[Detective-RAG] No-tools retry response:', raw)
+      } catch (retryErr) {
+        console.warn('[Detective-RAG] No-tools retry also failed:', retryErr)
       }
     }
   } catch (toolError) {
@@ -1979,7 +2267,36 @@ const FALLBACK_QUESTIONS = [
 
   // Achievement/Role
   'Is your character a leader?',
-  'Has your character won major awards?'
+  'Has your character won major awards?',
+
+  // Actor deep-dive (additional discrimination for actor-confirmed games)
+  'Is your character known primarily for action movies?',
+  'Has your character worked with director Martin Scorsese?',
+  'Has your character played a real historical person on screen?',
+  'Has your character starred in a romantic drama or love story?',
+  'Is your character known for playing morally ambiguous characters?',
+  'Has your character appeared in a Quentin Tarantino film?',
+  'Has your character starred in a superhero movie?',
+  'Is your character known for their voice acting?',
+  'Has your character directed a film in addition to acting?',
+  'Is your character primarily known for independent films?',
+  'Has your character appeared in a Steven Spielberg film?',
+  'Is your character known for playing tough or gritty characters?',
+  'Has your character won a Golden Globe award?',
+  'Is your character over 60 years old?',
+  'Was your character a major star before the year 2000?',
+  'Is your character known for playing charismatic or charming roles?',
+  'Has your character had a major role in a biographical film?',
+
+  // Ultimate fallbacks (rotate through these if all above are exhausted)
+  'Is your character well-known internationally?',
+  'Is your character associated with a specific location or place?',
+  'Does your character have a distinctive personality trait?',
+  'Is your character known for a specific catchphrase or saying?',
+  'Has your character appeared in more than 10 major films?',
+  'Is your character known for serious dramatic performances?',
+  'Does your character have a signature acting style?',
+  'Is your character considered a Hollywood legend?',
 ]
 
 function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], turns?: Array<{ question: string; answer: AnswerValue }>): string {
@@ -2033,8 +2350,26 @@ function getFallbackQuestion(askedQuestions: string[], traits: Trait[] = [], tur
     return q
   }
 
-  // All fallback questions exhausted - return a generic one
-  return 'Is your character well-known internationally?'
+  // All fallback questions exhausted — use a rotating emergency pool so we never
+  // repeat the exact same question indefinitely. The pool questions are intentionally
+  // open-ended and span dimensions not covered by the structured list above.
+  const EMERGENCY_POOL = [
+    'Is your character considered one of the greatest in their field?',
+    'Is your character associated with a specific decade?',
+    'Is your character known for a single defining work or role?',
+    'Has your character ever won a lifetime achievement award?',
+    'Is your character known for collaborating with the same creative partners repeatedly?',
+    'Is your character primarily known in their home country rather than internationally?',
+    'Has your character ever made a highly anticipated comeback or return?',
+    'Is your character known for a very long career spanning multiple decades?',
+    'Has your character ever been considered controversial or polarizing?',
+    'Is your character known for transforming their appearance for roles?',
+  ]
+  console.warn('[Detective-RAG] All fallback questions exhausted! Using emergency pool rotation.')
+  // Pick an emergency question not yet asked
+  const askedNorm = askedQuestions.map(q => normalizeQuestion(q))
+  const unusedEmergency = EMERGENCY_POOL.find(q => !askedNorm.includes(normalizeQuestion(q)))
+  return unusedEmergency ?? EMERGENCY_POOL[askedQuestions.length % EMERGENCY_POOL.length]
 }
 
 /**
@@ -2103,7 +2438,7 @@ export async function askDetective(
     } else {
       // Regular question - extract traits (can be multiple!)
       console.info('[Detective-RAG] Extracting traits from Q&A...')
-      const validTraitKeys = ['category', 'fictional', 'gender', 'origin_medium', 'has_powers', 'alignment', 'species', 'age_group', 'tv_show_type', 'publisher', 'nationality', 'has_oscar', 'is_alive']
+      const validTraitKeys = ['category', 'fictional', 'gender', 'media_origin', 'has_powers', 'alignment', 'species', 'age_group', 'tv_show_type', 'publisher', 'nationality', 'has_oscar', 'is_alive']
       const extractedTraits = await extractTraits(questionToAnalyze, answerToAnalyze, turnAdded, validTraitKeys, traits)
       if (extractedTraits.length > 0) {
         newTraits.push(...extractedTraits)
@@ -2132,28 +2467,28 @@ export async function askDetective(
     // Add NOT_X traits for each impossible origin if not already present
     for (const origin of impossibleOrigins) {
       const alreadyHasNegation = allTraits.some(t => 
-        t.key === 'origin_medium' && t.value === `NOT_${origin}`
+        t.key === 'media_origin' && t.value === `NOT_${origin}`
       )
       const alreadyHasPositive = allTraits.some(t =>
-        t.key === 'origin_medium' && t.value === origin
+        t.key === 'media_origin' && t.value === origin
       )
       
       if (!alreadyHasNegation && !alreadyHasPositive) {
         const deducedTrait: Trait & TurnAdded = {
-          key: 'origin_medium',
+          key: 'media_origin',
           value: `NOT_${origin}`,
           confidence: 0.95,
           turnAdded: turnAdded
         }
         newTraits.push(deducedTrait)
-        console.info(`[Detective-RAG]   → Deduced: origin_medium=NOT_${origin} (real person can't be from ${origin})`)
+        console.info(`[Detective-RAG]   → Deduced: media_origin=NOT_${origin} (real person can't be from ${origin})`)
       }
     }
   }
   
   // LOGICAL DEDUCTION: Origin medium implications
   // If character IS from a fictional origin, they must be fictional
-  const originMediumTraits = allTraits.filter(t => t.key === 'origin_medium' && !t.value.startsWith('NOT_'))
+  const originMediumTraits = allTraits.filter(t => t.key === 'media_origin' && !t.value.startsWith('NOT_'))
   const hasFictionalOrigin = originMediumTraits.some(t => 
     ['marvel', 'dc', 'anime', 'manga', 'video-game', 'tv-show', 'movie-character', 'book-character', 'comic'].includes(t.value)
   )

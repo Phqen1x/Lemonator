@@ -1,7 +1,12 @@
 export const LEMONADE_BASE_URL = 'http://localhost:8000'
 export const CHAT_ENDPOINT = `${LEMONADE_BASE_URL}/v1/chat/completions`
 export const IMAGE_ENDPOINT = `${LEMONADE_BASE_URL}/v1/images/generations`
+export const TTS_ENDPOINT = `${LEMONADE_BASE_URL}/v1/audio/speech`
 export const HEALTH_ENDPOINT = `${LEMONADE_BASE_URL}/v1/models`
+
+// Kokoro TTS model — fable voice suits the quirky detective character
+export const TTS_MODEL = 'kokoro-v1'
+export const TTS_VOICE = 'fable'
 
 // Model selection for RAG-enhanced detective
 // Qwen3-4B: Best balance of speed (fast NPU) and reasoning for RAG

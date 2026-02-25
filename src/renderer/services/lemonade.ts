@@ -1,4 +1,4 @@
-import { CHAT_ENDPOINT, IMAGE_ENDPOINT, HEALTH_ENDPOINT } from '../../shared/constants'
+import { CHAT_ENDPOINT, IMAGE_ENDPOINT, TTS_ENDPOINT, HEALTH_ENDPOINT, TTS_MODEL, TTS_VOICE } from '../../shared/constants'
 import type { ChatCompletionRequest, ChatCompletionResponse, ImageGenerationRequest, ImageGenerationResponse } from '../types/api'
 
 async function fetchJSON<T>(url: string, body: unknown, timeoutMs = 180000): Promise<T> {
@@ -45,6 +45,29 @@ export async function chatCompletion(req: ChatCompletionRequest): Promise<ChatCo
 export async function generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResponse> {
   // SDXL-Turbo on CPU takes 60-90 seconds per image
   return fetchJSON<ImageGenerationResponse>(IMAGE_ENDPOINT, req, 120000)
+}
+
+/**
+ * Calls the Kokoro TTS model and returns the raw MP3 ArrayBuffer.
+ * Pass an AbortSignal to cancel an in-flight request when the user answers
+ * before the audio has finished loading.
+ */
+export async function textToSpeech(
+  text: string,
+  signal?: AbortSignal,
+  voice = TTS_VOICE,
+): Promise<ArrayBuffer> {
+  const res = await fetch(TTS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: TTS_MODEL, input: text, voice }),
+    signal,
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`TTS ${res.status}: ${body}`)
+  }
+  return res.arrayBuffer()
 }
 
 export async function checkHealth(): Promise<boolean> {

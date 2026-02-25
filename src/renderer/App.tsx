@@ -1,6 +1,7 @@
 import { GameProvider, useGameState } from './context/GameContext'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useLemonadeHealth } from './hooks/useLemonadeHealth'
+import { useLemonadeVoice } from './hooks/useLemonadeVoice'
 import Canvas from './components/Canvas'
 import ChatLog from './components/ChatLog'
 import DetectiveBrain from './components/DetectiveBrain'
@@ -16,6 +17,7 @@ function GameApp() {
   const state = useGameState()
   const { startGame, submitAnswer, confirmGuess, resetGame } = useGameLoop()
   const { isConnected } = useLemonadeHealth()
+  useLemonadeVoice(state)
 
   const showReveal = state.phase === 'guessing' || state.phase === 'revealed' || state.phase === 'hero_render'
   const showGame = state.phase !== 'idle'
